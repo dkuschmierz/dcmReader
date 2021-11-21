@@ -1,0 +1,135 @@
+! This is a Sample DCM-File in KONSERVIERUNG_FORMAT 2.0
+* It covers all possible DCM parameters.
+. Version 1.0
+
+KONSERVIERUNG_FORMAT 2.0
+
+FUNKTIONEN
+  FKT ParameterFunction "1.0" "Function for parameters"
+  FKT BlockParameterFunction "2.0" "Function for block parameters"
+  FKT CharacteristicLineFunction "3.0" "Function for characteristic line functions"
+  FKT FixedCharacteristicLineFunction "3.1" "Function for fixed characteristic line functions"
+  FKT GroupCharacteristicLineFunction "3.2" "Function for group characteristic line functions"
+  FKT CharacteristicMapFunction "4.0" "Function for characteristic map functions"
+  FKT FixedCharacteristicMapFunction "4.1" "Function for fixed characteristic map functions"
+  FKT GroupCharacteristicMapFunction "4.2" "Function for group characteristic map functions"
+  FKT DistributionFunction "5.0" "Function for distribution functions"
+END
+
+FESTWERT valueParameter
+  LANGNAME      "Sample value parameter"
+  FUNKTION      "ParameterFunction"
+  DISPLAYNAME   ParameterDisplayname
+  EINHEIT_W     "°C"
+  WERT          25.0
+  VAR           VariantA=27.5
+END
+
+FESTWERT textParameter
+  LANGNAME      "Sample text parameter"
+  FUNKTION      "ParameterFunction"
+  DISPLAYNAME   ParameterDisplayname
+  EINHEIT_W     "-"
+  TEXT          "ParameterA"
+  VAR           VariantA="ParameterB"
+END
+
+FESTWERTEBLOCK blockParameter1D 4
+  LANGNAME      "Sample block parameters"
+  FUNKTION      "BlockParameterFunction"
+  DISPLAYNAME   BlockParameterDisplayname
+  EINHEIT_W     "°C"
+  WERT          0.75 -0.25 0.5 1.5
+END
+
+FESTWERTEBLOCK blockParameter2D 4 @ 2
+  LANGNAME      "Sample block parameters"
+  FUNKTION      "BlockParameterFunction"
+  DISPLAYNAME   BlockParameterDisplayname
+  EINHEIT_W     "°C"
+  WERT          0.75 -0.25 0.5 1.5
+  WERT          10.75 -10.25 10.5 11.5
+END
+
+KENNLINIE characteristicLine 4
+  LANGNAME      "Sample characteristic line"
+  FUNKTION      "CharacteristicLineFunction"
+  DISPLAYNAME   CharacteristicLineDisplayname
+  EINHEIT_X     "s"
+  EINHEIT_W     "°"
+  ST/X          0.0 1.0 2.0 3.0
+  WERT          0.0 80.0 120.0 180.0
+END
+
+FESTKENNLINIE fixedCharacteristicLine 3
+  LANGNAME      "Sample fixed characteristic line"
+  FUNKTION      "FixedCharacteristicLineFunction"
+  DISPLAYNAME   FixedCharacteristicLineDisplayname
+  EINHEIT_X     "s"
+  EINHEIT_W     "°"
+  ST/X          0.0 1.0 2.0 
+  WERT          45.0 90.0 135.0
+END
+
+GRUPPENKENNLINIE groupCharacteristicLine 3
+  LANGNAME      "Sample group characteristic line"
+  FUNKTION      "GroupCharacteristicLineFunction"
+  DISPLAYNAME   GroupCharacteristicLineDisplayname
+  EINHEIT_X     "s"
+  EINHEIT_W     "°"
+  ST/X          1.0 2.0 3.0
+  WERT          -45.0 -90.0 -135.0
+END
+
+KENNFELD characteristicMap 3 2
+  LANGNAME      "Sample characteristic map"
+  FUNKTION      "CharacteristicMapFunction"
+  DISPLAYNAME   CharacteristicMapDisplayname
+  EINHEIT_X     "°C"
+  EINHEIT_Y     "m/s"
+  EINHEIT_W     "bar"
+  ST/X          1.0 2.0 3.0
+  ST/Y          1.0 
+  WERT          0.0 0.4 0.8
+  ST/Y          2.0 
+  WERT          1.0 2.0 3.0
+END
+  
+FESTKENNFELD fixedCharacteristicMap 3 2
+  LANGNAME      "Sample fixed characteristic map"
+  FUNKTION      "FixedCharacteristicMapFunction"
+  DISPLAYNAME   FixedCharacteristicMapDisplayname
+  EINHEIT_X     "°C"
+  EINHEIT_Y     "m/s"
+  EINHEIT_W     "bar"
+  ST/X          1.0 2.0 3.0
+  ST/Y          0.0 
+  WERT          0.0 0.4 0.8
+  ST/Y          1.0 
+  WERT          1.0 2.0 3.0
+END
+
+GRUPPENKENNFELD groupCharacteristicMap 3 3
+  LANGNAME      "Sample group characteristic map"
+  FUNKTION      "GroupCharacteristicMapFunction"
+  DISPLAYNAME   GroupCharacteristicMapDisplayname
+  EINHEIT_X     "°C"
+  EINHEIT_Y     "m/s"
+  EINHEIT_W     "bar"
+  ST/X          1.0 2.0 3.0 
+  ST/Y          1.0 
+  WERT          1.0 2.0 3.0 
+  ST/Y          2.0 
+  WERT          2.0 4.0 6.0 
+  ST/Y          3.0 
+  WERT          3.0 6.0 9.0
+END
+
+STUETZSTELLENVERTEILUNG distrib 3 
+  LANGNAME      "Sample distribution"
+  FUNKTION      "DistributionFunction"
+  DISPLAYNAME   DistributionDisplayname
+  EINHEIT_X     "mm"
+  ST/X          1.0 2.0 3.0
+END
+
