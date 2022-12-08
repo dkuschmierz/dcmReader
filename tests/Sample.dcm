@@ -51,24 +51,28 @@ FESTWERTEBLOCK blockParameter2D 4 @ 2
   WERT          10.75 -10.25 10.5 11.5
 END
 
-KENNLINIE characteristicLine 4
+KENNLINIE characteristicLine 8
   LANGNAME      "Sample characteristic line"
   FUNKTION      "CharacteristicLineFunction"
   DISPLAYNAME   CharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
   ST/X          0.0 1.0 2.0 3.0
+  ST/X          4.0 5.0 6.0 7.0
   WERT          0.0 80.0 120.0 180.0
+  WERT          220.0 260.0 300.0 340.0
 END
 
-FESTKENNLINIE fixedCharacteristicLine 3
+FESTKENNLINIE fixedCharacteristicLine 6
   LANGNAME      "Sample fixed characteristic line"
   FUNKTION      "FixedCharacteristicLineFunction"
   DISPLAYNAME   FixedCharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
-  ST/X          0.0 1.0 2.0 
+  ST/X          0.0 1.0 2.0
+  ST/X          3.0 4.0 5.0 
   WERT          45.0 90.0 135.0
+  WERT          180.0 225.0 270.0
 END
 
 GRUPPENKENNLINIE groupCharacteristicLine 3
@@ -81,7 +85,7 @@ GRUPPENKENNLINIE groupCharacteristicLine 3
   WERT          -45.0 -90.0 -135.0
 END
 
-KENNFELD characteristicMap 3 2
+KENNFELD characteristicMap 6 2
   LANGNAME      "Sample characteristic map"
   FUNKTION      "CharacteristicMapFunction"
   DISPLAYNAME   CharacteristicMapDisplayname
@@ -89,13 +93,15 @@ KENNFELD characteristicMap 3 2
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
   ST/X          1.0 2.0 3.0
+  ST/X          4.0 5.0 6.0
   ST/Y          1.0 
   WERT          0.0 0.4 0.8
+  WERT          1.0 1.4 1.8
   ST/Y          2.0 
-  WERT          1.0 2.0 3.0
+  WERT          1.0 2.0 3.0 2.0 3.0 4.0
 END
   
-FESTKENNFELD fixedCharacteristicMap 3 2
+FESTKENNFELD fixedCharacteristicMap 6 2
   LANGNAME      "Sample fixed characteristic map"
   FUNKTION      "FixedCharacteristicMapFunction"
   DISPLAYNAME   FixedCharacteristicMapDisplayname
@@ -103,13 +109,15 @@ FESTKENNFELD fixedCharacteristicMap 3 2
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
   ST/X          1.0 2.0 3.0
+  ST/X          4.0 5.0 6.0
   ST/Y          0.0 
   WERT          0.0 0.4 0.8
+  WERT          1.0 1.4 1.8
   ST/Y          1.0 
-  WERT          1.0 2.0 3.0
+  WERT          1.0 2.0 3.0 2.0 3.0 4.0
 END
 
-GRUPPENKENNFELD groupCharacteristicMap 3 3
+GRUPPENKENNFELD groupCharacteristicMap 6 3
   LANGNAME      "Sample group characteristic map"
   FUNKTION      "GroupCharacteristicMapFunction"
   DISPLAYNAME   GroupCharacteristicMapDisplayname
@@ -117,12 +125,16 @@ GRUPPENKENNFELD groupCharacteristicMap 3 3
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
   ST/X          1.0 2.0 3.0 
+  ST/X          4.0 5.0 6.0
   ST/Y          1.0 
   WERT          1.0 2.0 3.0 
+  WERT          2.0 3.0 4.0 
   ST/Y          2.0 
   WERT          2.0 4.0 6.0 
+  WERT          3.0 4.0 5.0 
   ST/Y          3.0 
   WERT          3.0 6.0 9.0
+  WERT          7.0 8.0 9.0
 END
 
 STUETZSTELLENVERTEILUNG distrib 3 

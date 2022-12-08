@@ -103,6 +103,10 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(80.0, characteristic.values[1.0])
         self.assertEqual(120.0, characteristic.values[2.0])
         self.assertEqual(180.0, characteristic.values[3.0])
+        self.assertEqual(220.0, characteristic.values[4.0])
+        self.assertEqual(260.0, characteristic.values[5.0])
+        self.assertEqual(300.0, characteristic.values[6.0])
+        self.assertEqual(340.0, characteristic.values[7.0])
 
     def test_fixedCharacteristicLine(self):
         dcm = dcmReader.DcmReader()
@@ -122,6 +126,9 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(45.0, characteristic.values[0.0])
         self.assertEqual(90.0, characteristic.values[1.0])
         self.assertEqual(135.0, characteristic.values[2.0])
+        self.assertEqual(180.0, characteristic.values[3.0])
+        self.assertEqual(225.0, characteristic.values[4.0])
+        self.assertEqual(270.0, characteristic.values[5.0])
 
     def test_groupCharacteristicLine(self):
         dcm = dcmReader.DcmReader()
@@ -148,7 +155,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         dcm = dcmReader.DcmReader()
         dcm.read("./Sample.dcm")
         characteristic = dcm.getCharacteristicMaps()[0]
-
+        print(characteristic)
         self.assertEqual(1, len(dcm.getCharacteristicMaps()))
 
         self.assertEqual("characteristicMap", characteristic.name)
@@ -161,9 +168,15 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(0.0, characteristic.values[1.0][1.0])
         self.assertEqual(0.4, characteristic.values[1.0][2.0])
         self.assertEqual(0.8, characteristic.values[1.0][3.0])
+        self.assertEqual(1.0, characteristic.values[1.0][4.0])
+        self.assertEqual(1.4, characteristic.values[1.0][5.0])
+        self.assertEqual(1.8, characteristic.values[1.0][6.0])
         self.assertEqual(1.0, characteristic.values[2.0][1.0])
         self.assertEqual(2.0, characteristic.values[2.0][2.0])
         self.assertEqual(3.0, characteristic.values[2.0][3.0])
+        self.assertEqual(2.0, characteristic.values[2.0][4.0])
+        self.assertEqual(3.0, characteristic.values[2.0][5.0])
+        self.assertEqual(4.0, characteristic.values[2.0][6.0])
 
     def test_fixedCharacteristicMap(self):
         dcm = dcmReader.DcmReader()
@@ -184,9 +197,15 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(0.0, characteristic.values[0.0][1.0])
         self.assertEqual(0.4, characteristic.values[0.0][2.0])
         self.assertEqual(0.8, characteristic.values[0.0][3.0])
+        self.assertEqual(1.0, characteristic.values[0.0][4.0])
+        self.assertEqual(1.4, characteristic.values[0.0][5.0])
+        self.assertEqual(1.8, characteristic.values[0.0][6.0])
         self.assertEqual(1.0, characteristic.values[1.0][1.0])
         self.assertEqual(2.0, characteristic.values[1.0][2.0])
         self.assertEqual(3.0, characteristic.values[1.0][3.0])
+        self.assertEqual(2.0, characteristic.values[1.0][4.0])
+        self.assertEqual(3.0, characteristic.values[1.0][5.0])
+        self.assertEqual(4.0, characteristic.values[1.0][6.0])
 
     def test_groupCharacteristicMap(self):
         dcm = dcmReader.DcmReader()
@@ -207,12 +226,21 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(1.0, characteristic.values[1.0][1.0])
         self.assertEqual(2.0, characteristic.values[1.0][2.0])
         self.assertEqual(3.0, characteristic.values[1.0][3.0])
+        self.assertEqual(2.0, characteristic.values[1.0][4.0])
+        self.assertEqual(3.0, characteristic.values[1.0][5.0])
+        self.assertEqual(4.0, characteristic.values[1.0][6.0])
         self.assertEqual(2.0, characteristic.values[2.0][1.0])
         self.assertEqual(4.0, characteristic.values[2.0][2.0])
         self.assertEqual(6.0, characteristic.values[2.0][3.0])
+        self.assertEqual(3.0, characteristic.values[2.0][4.0])
+        self.assertEqual(4.0, characteristic.values[2.0][5.0])
+        self.assertEqual(5.0, characteristic.values[2.0][6.0])
         self.assertEqual(3.0, characteristic.values[3.0][1.0])
         self.assertEqual(6.0, characteristic.values[3.0][2.0])
         self.assertEqual(9.0, characteristic.values[3.0][3.0])
+        self.assertEqual(7.0, characteristic.values[3.0][4.0])
+        self.assertEqual(8.0, characteristic.values[3.0][5.0])
+        self.assertEqual(9.0, characteristic.values[3.0][6.0])
 
 
 class TestDistribution(unittest.TestCase):
