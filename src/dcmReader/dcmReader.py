@@ -287,7 +287,7 @@ class DcmReader:
             Parsed variant either as float/int if variant is value
             or as str if variant is text field
         """
-        variant = re.search(r"VAR\s+(.*?)=(.*)", line)
+        variant = re.search(r"VAR\s+(.*?)=(.*)", line.strip())
         value = None
         try:
             value = self.convertValue(str(variant.group(2)).strip())
@@ -370,7 +370,7 @@ class DcmReader:
                 # Check if format version line
                 if _dcmFormat is None:
                     if line.startswith("KONSERVIERUNG_FORMAT"):
-                        _dcmFormat = float(re.search(r"(\d\.\d)", line).group(1))
+                        _dcmFormat = float(re.search(r"(\d\.\d)", line.strip()).group(1))
                         continue
                     else:
                         logging.info(f"Found line: {line}")
@@ -385,7 +385,7 @@ class DcmReader:
                         if line.startswith("END"):
                             break
                         functionMatch = re.search(
-                            r"\s+FKT (.*?)(?: \"(.*?)?\"(?: \"(.*?)?\")?)?$", line
+                            r"FKT (.*?)(?: \"(.*?)?\"(?: \"(.*?)?\")?)?$", line.strip()
                         )
                         self._functionsList.append(
                             DcmFunction(
@@ -428,7 +428,7 @@ class DcmReader:
                 # Check if parameter block start
                 elif line.startswith("FESTWERTEBLOCK"):
                     blockData = re.search(
-                        r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?", line
+                        r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?", line.strip()
                     )
                     foundBlockParameter = DcmParameterBlock(blockData.group(1))
                     foundBlockParameter.xDimension = self.convertValue(
@@ -475,7 +475,7 @@ class DcmReader:
 
                 # Check if characteristic line
                 elif line.startswith("KENNLINIE"):
-                    reMatch = re.search(r"KENNLINIE\s+(.*?)\s+(\d+)", line)
+                    reMatch = re.search(r"KENNLINIE\s+(.*?)\s+(\d+)", line.strip())
                     foundCharacteristicLine = DcmCharacteristicLine(reMatch.group(1))
                     foundCharacteristicLine.xDimension = self.convertValue(
                         reMatch.group(2)
@@ -522,7 +522,7 @@ class DcmReader:
 
                 # Check if fixed characteristic line
                 elif line.startswith("FESTKENNLINIE"):
-                    reMatch = re.search(r"FESTKENNLINIE\s+(.*?)\s+(\d+)", line)
+                    reMatch = re.search(r"FESTKENNLINIE\s+(.*?)\s+(\d+)", line.strip())
                     foundFixedCharacteristicLine = DcmFixedCharacteristicLine(
                         reMatch.group(1)
                     )
@@ -586,7 +586,7 @@ class DcmReader:
 
                 # Check if group characteristic line
                 elif line.startswith("GRUPPENKENNLINIE"):
-                    reMatch = re.search(r"GRUPPENKENNLINIE\s+(.*?)\s+(\d+)", line)
+                    reMatch = re.search(r"GRUPPENKENNLINIE\s+(.*?)\s+(\d+)", line.strip())
                     foundGroupCharacteristicLine = DcmGroupCharacteristicLine(
                         reMatch.group(1)
                     )
@@ -650,7 +650,7 @@ class DcmReader:
 
                 # Check for characteristic map
                 elif line.startswith("KENNFELD "):
-                    reMatch = re.search(r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line)
+                    reMatch = re.search(r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
                     foundCharacteristicMap = DcmCharacteristicMap(reMatch.group(1))
                     foundCharacteristicMap.xDimension = self.convertValue(
                         reMatch.group(2)
@@ -720,7 +720,7 @@ class DcmReader:
 
                 # Check for fixed characteristic map
                 elif line.startswith("FESTKENNFELD "):
-                    reMatch = re.search(r"FESTKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line)
+                    reMatch = re.search(r"FESTKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
                     foundFixedCharacteristicMap = DcmFixedCharacteristicMap(
                         reMatch.group(1)
                     )
@@ -804,7 +804,7 @@ class DcmReader:
                 # Check for group characteristic map
                 elif line.startswith("GRUPPENKENNFELD "):
                     reMatch = re.search(
-                        r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line
+                        r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip()
                     )
                     foundGroupCharacteristicMap = DcmGroupCharacteristicMap(
                         reMatch.group(1)
@@ -889,7 +889,7 @@ class DcmReader:
                 # Check if distribution
                 elif line.startswith("STUETZSTELLENVERTEILUNG"):
                     reMatch = re.search(
-                        r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line
+                        r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line.strip()
                     )
                     foundDistribution = DcmDistribution(reMatch.group(1))
                     foundDistribution.xDimension = self.convertValue(reMatch.group(2))
