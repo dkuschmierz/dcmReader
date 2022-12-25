@@ -92,11 +92,9 @@ KENNFELD characteristicMap 6 2
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
-  ST/X          1.0 2.0 3.0
-  ST/X          4.0 5.0 6.0
+  ST/X          1.0 2.0 3.0 4.0 5.0 6.0
   ST/Y          1.0 
-  WERT          0.0 0.4 0.8
-  WERT          1.0 1.4 1.8
+  WERT          0.0 0.4 0.8 1.0 1.4 1.8
   ST/Y          2.0 
   WERT          1.0 2.0 3.0 2.0 3.0 4.0
 END

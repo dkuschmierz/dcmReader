@@ -5,6 +5,7 @@ Parser for the DCM (Data Conservation format) format used by e.g. Vector, ETAS,.
 The read function of DcmParser parses the given DCM-file and stores internally the parsed values.
 
 Sample program:
+    from dcmReader.dcm_reader import DcmReader
 
     dcm = DcmReader()
     dcm.read("tests/Sample.dcm")
@@ -42,6 +43,15 @@ Will return:
     DistributionFunction
       Version: 5.0
       Description: Function for distribution functions
+
+You can also save a DCM object to a file with the write function. The output is sorted first by FUNKTION then by LANGNAME.
+This can also be used to sort a DCM file:
+
+    from dcmReader.dcm_reader import DcmReader
+
+    dcm = DcmReader()
+    dcm.read("tests/Sample.dcm")
+    dcm.write("tests/Sample_sorted.dcm")
 
 ## UnitTests
 The UnitTests can be run in the tests directory by running
