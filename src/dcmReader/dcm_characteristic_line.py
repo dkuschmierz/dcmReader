@@ -17,6 +17,8 @@ class DcmCharacteristicLine:
         values (dict):      Dict of values of the parameter, KEYs are retrieved from ST/X,
                             values are retrieved from WERT
         x_dimension (int):  Dimension in x direction of the parameter block
+        x_mapping (str):    Mapping of the x axis to a distribution, if available as a comment in DCM
+        comment (str):      Block comment
     """
 
     def __init__(self, name) -> None:
@@ -29,10 +31,16 @@ class DcmCharacteristicLine:
         self.unit_x = None
         self.unit_values = None
         self.x_dimension = 0
+        self.x_mapping = None
+        self.comment = None
+        self._type_name = "KENNLINIE"
 
     def __str__(self):
-        value = f"KENNLINIE {self.name} {self.x_dimension}\n"
+        value = f"{self._type_name} {self.name} {self.x_dimension}\n"
 
+        if self.comment:
+            for line in self.comment.splitlines(True):
+                value += f"* {line}"
         if self.description:
             value += f'  LANGNAME      "{self.description}"\n'
         if self.function:
@@ -43,10 +51,12 @@ class DcmCharacteristicLine:
             value += f'  EINHEIT_X     "{self.unit_x}"\n'
         if self.unit_values:
             value += f'  EINHEIT_W     "{self.unit_values}"\n'
+        if self.x_mapping:
+            value += f'*SSTX   {self.x_mapping}\n'
         if self.values:
             x_entries = ""
             value_entries = ""
-            for x_entry,value_entry in self.values.items():
+            for x_entry, value_entry in self.values.items():
                 x_entries += f"{str(x_entry)} "
                 value_entries += f"{str(value_entry)} "
             value += f'  ST/X          {x_entries.strip()}\n'
@@ -60,4 +70,3 @@ class DcmCharacteristicLine:
 
     def __lt__(self, other):
         return self.function < other.function and self.description < other.description
-

@@ -21,6 +21,9 @@ class DcmCharacteristicMap:
                             contains the values from ST/Y.
         x_dimension (int):   Dimension in x direction of the characteristic maps
         y_dimension (int):   Dimension in y direction of the characteristic maps
+        x_mapping (str):    Mapping of the x axis to a distribution, if available as a comment in DCM
+        y_mapping (str):    Mapping of the y axis to a distribution, if available as a comment in DCM
+        comment (str):      Block comment
     """
 
     def __init__(self, name) -> None:
@@ -35,10 +38,17 @@ class DcmCharacteristicMap:
         self.unit_values = None
         self.x_dimension = 0
         self.y_dimension = 0
+        self.x_mapping = None
+        self.y_mapping = None
+        self.comment = None
+        self._type_name = "KENNFELD"
 
     def __str__(self):
-        value = f"KENNFELD {self.name} {self.x_dimension} {self.y_dimension}\n"
+        value = f"{self._type_name} {self.name} {self.x_dimension} {self.y_dimension}\n"
 
+        if self.comment:
+            for line in self.comment.splitlines(True):
+                value += f"* {line}"
         if self.description:
             value += f'  LANGNAME      "{self.description}"\n'
         if self.function:
@@ -51,11 +61,15 @@ class DcmCharacteristicMap:
             value += f'  EINHEIT_Y     "{self.unit_y}"\n'
         if self.unit_values:
             value += f'  EINHEIT_W     "{self.unit_values}"\n'
+        if self.x_mapping:
+            value += f'*SSTX   {self.x_mapping}\n'
+        if self.y_mapping:
+            value += f'*SSTY   {self.y_mapping}\n'
         stx_written = False
         for y_entry, map_values in self.values.items():
             x_entries = ""
             value_entries = ""
-            for x_entry,value_entry in map_values.items():
+            for x_entry, value_entry in map_values.items():
                 x_entries += f"{str(x_entry)} "
                 value_entries += f"{str(value_entry)} "
             if not stx_written:

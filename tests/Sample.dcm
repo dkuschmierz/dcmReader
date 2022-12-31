@@ -17,6 +17,8 @@ FUNKTIONEN
 END
 
 FESTWERT valueParameter
+* Sample comment
+! Second comment line
   LANGNAME      "Sample value parameter"
   FUNKTION      "ParameterFunction"
   DISPLAYNAME   ParameterDisplayname
@@ -35,6 +37,7 @@ FESTWERT textParameter
 END
 
 FESTWERTEBLOCK blockParameter1D 4
+* Sample comment
   LANGNAME      "Sample block parameters"
   FUNKTION      "BlockParameterFunction"
   DISPLAYNAME   BlockParameterDisplayname
@@ -52,11 +55,13 @@ FESTWERTEBLOCK blockParameter2D 4 @ 2
 END
 
 KENNLINIE characteristicLine 8
+* Sample comment
   LANGNAME      "Sample characteristic line"
   FUNKTION      "CharacteristicLineFunction"
   DISPLAYNAME   CharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
+*SSTX DISTRIBUTION X
   ST/X          0.0 1.0 2.0 3.0
   ST/X          4.0 5.0 6.0 7.0
   WERT          0.0 80.0 120.0 180.0
@@ -64,11 +69,13 @@ KENNLINIE characteristicLine 8
 END
 
 FESTKENNLINIE fixedCharacteristicLine 6
+* Sample comment
   LANGNAME      "Sample fixed characteristic line"
   FUNKTION      "FixedCharacteristicLineFunction"
   DISPLAYNAME   FixedCharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
+  *SSTX DISTRIBUTION X
   ST/X          0.0 1.0 2.0
   ST/X          3.0 4.0 5.0 
   WERT          45.0 90.0 135.0
@@ -76,22 +83,27 @@ FESTKENNLINIE fixedCharacteristicLine 6
 END
 
 GRUPPENKENNLINIE groupCharacteristicLine 3
+* Sample comment
   LANGNAME      "Sample group characteristic line"
   FUNKTION      "GroupCharacteristicLineFunction"
   DISPLAYNAME   GroupCharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
+* SSTX DISTRIBUTION X  
   ST/X          1.0 2.0 3.0
   WERT          -45.0 -90.0 -135.0
 END
 
 KENNFELD characteristicMap 6 2
+* Sample comment
   LANGNAME      "Sample characteristic map"
   FUNKTION      "CharacteristicMapFunction"
   DISPLAYNAME   CharacteristicMapDisplayname
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
+*SSTX DISTRIBUTION X
+*SSTY DISTRIBUTION Y
   ST/X          1.0 2.0 3.0 4.0 5.0 6.0
   ST/Y          1.0 
   WERT          0.0 0.4 0.8 1.0 1.4 1.8
@@ -100,12 +112,15 @@ KENNFELD characteristicMap 6 2
 END
   
 FESTKENNFELD fixedCharacteristicMap 6 2
+* Sample comment
   LANGNAME      "Sample fixed characteristic map"
   FUNKTION      "FixedCharacteristicMapFunction"
   DISPLAYNAME   FixedCharacteristicMapDisplayname
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
+  *SSTX DISTRIBUTION X
+  *SSTY DISTRIBUTION Y
   ST/X          1.0 2.0 3.0
   ST/X          4.0 5.0 6.0
   ST/Y          0.0 
@@ -116,12 +131,15 @@ FESTKENNFELD fixedCharacteristicMap 6 2
 END
 
 GRUPPENKENNFELD groupCharacteristicMap 6 3
+* Sample comment
   LANGNAME      "Sample group characteristic map"
   FUNKTION      "GroupCharacteristicMapFunction"
   DISPLAYNAME   GroupCharacteristicMapDisplayname
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
+* SSTX DISTRIBUTION X
+* SSTY DISTRIBUTION Y
   ST/X          1.0 2.0 3.0 
   ST/X          4.0 5.0 6.0
   ST/Y          1.0 
@@ -136,6 +154,7 @@ GRUPPENKENNFELD groupCharacteristicMap 6 3
 END
 
 STUETZSTELLENVERTEILUNG distrib 3 
+*SST
   LANGNAME      "Sample distribution"
   FUNKTION      "DistributionFunction"
   DISPLAYNAME   DistributionDisplayname

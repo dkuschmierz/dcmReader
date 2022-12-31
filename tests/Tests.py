@@ -8,12 +8,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
 
 from dcmReader.dcm_reader import DcmReader
 
+
 class TestWriteFile(unittest.TestCase):
     def test_fileWriting(self):
         dcm = DcmReader()
         dcm.read("./Sample.dcm")
         self.assertEqual(9, len(dcm.getFunctions()))
         dcm.write("./Sample_written")
+
 
 class TestFunctions(unittest.TestCase):
     def test_functionParsing(self):
@@ -48,6 +50,7 @@ class TestParameters(unittest.TestCase):
         self.assertEqual(25.0, valueParameter.value)
         self.assertEqual(27.5, valueParameter.variants["VariantA"])
         self.assertEqual(None, valueParameter.text)
+        self.assertEqual("Sample comment\nSecond comment line\n", valueParameter.comment)
 
     def test_textParameter(self):
         dcm = DcmReader()
@@ -83,6 +86,7 @@ class TestParameterBlock(unittest.TestCase):
         self.assertEqual(-0.25, blockParameter.values[0][1])
         self.assertEqual(0.5, blockParameter.values[0][2])
         self.assertEqual(1.5, blockParameter.values[0][3])
+        self.assertEqual("Sample comment\n", blockParameter.comment)
 
         self.assertEqual("blockParameter1D", blockParameterWritten.name)
         self.assertEqual("Sample block parameters", blockParameterWritten.description)
@@ -93,6 +97,7 @@ class TestParameterBlock(unittest.TestCase):
         self.assertEqual(-0.25, blockParameterWritten.values[0][1])
         self.assertEqual(0.5, blockParameterWritten.values[0][2])
         self.assertEqual(1.5, blockParameterWritten.values[0][3])
+        self.assertEqual("Sample comment\n", blockParameterWritten.comment)
 
     def test_blockParameter2D(self):
         dcm = DcmReader()
@@ -130,6 +135,7 @@ class TestParameterBlock(unittest.TestCase):
         self.assertEqual(10.5, blockParameterWritten.values[1][2])
         self.assertEqual(11.5, blockParameterWritten.values[1][3])
 
+
 class TestCharacteristicLines(unittest.TestCase):
     def test_characteristicLine(self):
         dcm = DcmReader()
@@ -155,6 +161,8 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(260.0, characteristic.values[5.0])
         self.assertEqual(300.0, characteristic.values[6.0])
         self.assertEqual(340.0, characteristic.values[7.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getCharacteristicLines()))
 
@@ -172,6 +180,8 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(260.0, characteristicWritten.values[5.0])
         self.assertEqual(300.0, characteristicWritten.values[6.0])
         self.assertEqual(340.0, characteristicWritten.values[7.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
     def test_fixedCharacteristicLine(self):
         dcm = DcmReader()
@@ -197,6 +207,8 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(180.0, characteristic.values[3.0])
         self.assertEqual(225.0, characteristic.values[4.0])
         self.assertEqual(270.0, characteristic.values[5.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getFixedCharacteristicLines()))
 
@@ -214,6 +226,8 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(180.0, characteristicWritten.values[3.0])
         self.assertEqual(225.0, characteristicWritten.values[4.0])
         self.assertEqual(270.0, characteristicWritten.values[5.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
     def test_groupCharacteristicLine(self):
         dcm = DcmReader()
@@ -236,6 +250,8 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(-45.0, characteristic.values[1.0])
         self.assertEqual(-90.0, characteristic.values[2.0])
         self.assertEqual(-135.0, characteristic.values[3.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getGroupCharacteristicLines()))
 
@@ -250,6 +266,9 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(-45.0, characteristicWritten.values[1.0])
         self.assertEqual(-90.0, characteristicWritten.values[2.0])
         self.assertEqual(-135.0, characteristicWritten.values[3.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+
 
 class TestCharacteristicMaps(unittest.TestCase):
     def test_characteristicMap(self):
@@ -259,7 +278,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         dcmWritten.read("./Sample_written.dcm")
         characteristic = dcm.getCharacteristicMaps()[0]
         characteristicWritten = dcmWritten.getCharacteristicMaps()[0]
-    
+
         self.assertEqual(1, len(dcm.getCharacteristicMaps()))
 
         self.assertEqual("characteristicMap", characteristic.name)
@@ -281,6 +300,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(2.0, characteristic.values[2.0][4.0])
         self.assertEqual(3.0, characteristic.values[2.0][5.0])
         self.assertEqual(4.0, characteristic.values[2.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getCharacteristicMaps()))
 
@@ -303,6 +325,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(2.0, characteristicWritten.values[2.0][4.0])
         self.assertEqual(3.0, characteristicWritten.values[2.0][5.0])
         self.assertEqual(4.0, characteristicWritten.values[2.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
     def test_fixedCharacteristicMap(self):
         dcm = DcmReader()
@@ -335,6 +360,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(2.0, characteristic.values[1.0][4.0])
         self.assertEqual(3.0, characteristic.values[1.0][5.0])
         self.assertEqual(4.0, characteristic.values[1.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getFixedCharacteristicMaps()))
 
@@ -359,6 +387,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(2.0, characteristicWritten.values[1.0][4.0])
         self.assertEqual(3.0, characteristicWritten.values[1.0][5.0])
         self.assertEqual(4.0, characteristicWritten.values[1.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
     def test_groupCharacteristicMap(self):
         dcm = DcmReader()
@@ -397,6 +428,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(7.0, characteristic.values[3.0][4.0])
         self.assertEqual(8.0, characteristic.values[3.0][5.0])
         self.assertEqual(9.0, characteristic.values[3.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
+        self.assertEqual("Sample comment\n", characteristic.comment)
 
         self.assertEqual(1, len(dcmWritten.getGroupCharacteristicMaps()))
 
@@ -427,6 +461,9 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(7.0, characteristicWritten.values[3.0][4.0])
         self.assertEqual(8.0, characteristicWritten.values[3.0][5.0])
         self.assertEqual(9.0, characteristicWritten.values[3.0][6.0])
+        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
+        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
+        self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
 
 class TestDistribution(unittest.TestCase):
@@ -448,6 +485,7 @@ class TestDistribution(unittest.TestCase):
         self.assertEqual(1.0, distribution.values[0])
         self.assertEqual(2.0, distribution.values[1])
         self.assertEqual(3.0, distribution.values[2])
+        self.assertEqual("SST\n", distribution.comment)
 
         self.assertEqual(1, len(dcmWritten.getDistributions()))
 
@@ -459,6 +497,7 @@ class TestDistribution(unittest.TestCase):
         self.assertEqual(1.0, distributionWritten.values[0])
         self.assertEqual(2.0, distributionWritten.values[1])
         self.assertEqual(3.0, distributionWritten.values[2])
+        self.assertEqual("SST\n", distributionWritten.comment)
 
 
 if __name__ == "__main__":

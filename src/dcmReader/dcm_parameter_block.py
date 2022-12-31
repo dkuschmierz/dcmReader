@@ -16,6 +16,7 @@ class DcmParameterBlock:
         values (list):      List of values of the block parameter, started by WERT in DCM
         x_dimension (int):  Dimension in x direction of the block parameter
         y_dimension (int):  Dimension in y direction of the block parameter
+        comment (str):      Block comment
     """
 
     def __init__(self, name):
@@ -28,6 +29,7 @@ class DcmParameterBlock:
         self.unit = None
         self.x_dimension = 0
         self.y_dimension = 0
+        self.comment = None
 
     def __str__(self):
         value = f"FESTWERTEBLOCK {self.name} {self.x_dimension}"
@@ -36,6 +38,9 @@ class DcmParameterBlock:
         else:
             value += "\n"
 
+        if self.comment:
+            for line in self.comment.splitlines(True):
+                value += f"* {line}"
         if self.description:
             value += f'  LANGNAME      "{self.description}"\n'
         if self.function:

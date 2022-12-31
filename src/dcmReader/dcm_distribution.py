@@ -15,6 +15,7 @@ class DcmDistribution:
         unit_x (str):        Unit of the x axis values, started by EINHEIT_X in DCM
         values (list):      List of values of the distribution, values are retrieved from WERT
         x_dimension (int):   Dimension in x direction of the distribution
+        comment (str):      Block comment
     """
 
     def __init__(self, name) -> None:
@@ -26,9 +27,14 @@ class DcmDistribution:
         self.function = None
         self.unit_x = None
         self.x_dimension = 0
+        self.comment = None
 
     def __str__(self):
         value = f"STUETZSTELLENVERTEILUNG {self.name} {str(self.x_dimension)}\n"
+
+        if self.comment:
+            for line in self.comment.splitlines(True):
+                value += f"* {line}"
         if self.description:
             value += f'  LANGNAME      "{self.description}"\n'
         if self.function:

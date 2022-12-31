@@ -13,6 +13,7 @@ class DcmParameter:
         unit (str):         Unit of the parameter, started by EINHEIT_W in DCM
         value (float/int):  Value of the parameter, started by WERT in DCM
         text (str):         Alternative text-value, started by TEXT in DCM
+        comment (str):      Block comment
     """
 
     def __init__(self, name):
@@ -24,9 +25,14 @@ class DcmParameter:
         self.function = None
         self.unit = None
         self.text = None
+        self.comment = None
 
     def __str__(self):
         value = f"FESTWERT {self.name}\n"
+
+        if self.comment:
+            for line in self.comment.splitlines(True):
+                value += f"* {line}"
         if self.description:
             value += f'  LANGNAME      "{self.description}"\n'
         if self.function:

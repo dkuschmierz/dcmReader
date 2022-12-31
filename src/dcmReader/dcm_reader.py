@@ -116,13 +116,15 @@ class DcmReader:
         """
         _dcmFormat = None
 
+        comment_qualifier = ("!", "*", ".")
+
         with open(file, "r") as f:
             for line in f:
                 # Remove whitespaces
                 line = line.strip()
 
                 # Check if line is comment
-                if line.startswith(("!", "*", ".")):
+                if line.startswith(comment_qualifier):
                     if not self._fileHeaderFinished:
                         self._fileHeader = self._fileHeader + line[1:].strip() + os.linesep
                     continue
@@ -180,9 +182,13 @@ class DcmReader:
                             foundParameter.variants.update(self.parseVariant(line))
                         elif line.startswith("TEXT"):
                             foundParameter.text = self.parseString(line)
+                        elif line.startswith(comment_qualifier):
+                            if foundParameter.comment is None:
+                                foundParameter.comment = line[1:].strip() + os.linesep
+                            else:
+                                foundParameter.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._parameterList.append(foundParameter)
 
@@ -215,9 +221,13 @@ class DcmReader:
                             foundBlockParameter.unit = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundBlockParameter.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            if foundBlockParameter.comment is None:
+                                foundBlockParameter.comment = line[1:].strip() + os.linesep
+                            else:
+                                foundBlockParameter.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._blockParameterList.append(foundBlockParameter)
 
@@ -256,9 +266,17 @@ class DcmReader:
                             foundCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundCharacteristicLine.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatch = re.search(r"SSTX\s+(.*)", line)
+                            if reMatch:
+                                foundCharacteristicLine.x_mapping = reMatch.group(1)
+                            else:
+                                if foundCharacteristicLine.comment is None:
+                                    foundCharacteristicLine.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundCharacteristicLine.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._characteristicLineList.append(foundCharacteristicLine)
 
@@ -299,9 +317,17 @@ class DcmReader:
                             foundFixedCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundFixedCharacteristicLine.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatch = re.search(r"SSTX\s+(.*)", line)
+                            if reMatch:
+                                foundFixedCharacteristicLine.x_mapping = reMatch.group(1)
+                            else:
+                                if foundFixedCharacteristicLine.comment is None:
+                                    foundFixedCharacteristicLine.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundFixedCharacteristicLine.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._fixedCharacteristicLineList.append(foundFixedCharacteristicLine)
 
@@ -342,9 +368,17 @@ class DcmReader:
                             foundGroupCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundGroupCharacteristicLine.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatch = re.search(r"SSTX\s+(.*)", line)
+                            if reMatch:
+                                foundGroupCharacteristicLine.x_mapping = reMatch.group(1)
+                            else:
+                                if foundGroupCharacteristicLine.comment is None:
+                                    foundGroupCharacteristicLine.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundGroupCharacteristicLine.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._groupCharacteristicLineList.append(foundGroupCharacteristicLine)
 
@@ -399,9 +433,20 @@ class DcmReader:
                             foundCharacteristicMap.unit_y = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundCharacteristicMap.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatchX = re.search(r"SSTX\s+(.*)", line)
+                            reMatchY = re.search(r"SSTY\s+(.*)", line)
+                            if reMatchX:
+                                foundCharacteristicMap.x_mapping = reMatchX.group(1)
+                            elif reMatchY:
+                                foundCharacteristicMap.y_mapping = reMatchY.group(1)
+                            else:
+                                if foundCharacteristicMap.comment is None:
+                                    foundCharacteristicMap.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundCharacteristicMap.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._characteristicMapList.append(foundCharacteristicMap)
 
@@ -458,9 +503,20 @@ class DcmReader:
                             foundFixedCharacteristicMap.unit_y = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundFixedCharacteristicMap.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatchX = re.search(r"SSTX\s+(.*)", line)
+                            reMatchY = re.search(r"SSTY\s+(.*)", line)
+                            if reMatchX:
+                                foundFixedCharacteristicMap.x_mapping = reMatchX.group(1)
+                            elif reMatchY:
+                                foundFixedCharacteristicMap.y_mapping = reMatchY.group(1)
+                            else:
+                                if foundFixedCharacteristicMap.comment is None:
+                                    foundFixedCharacteristicMap.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundFixedCharacteristicMap.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._fixedCharacteristicMapList.append(foundFixedCharacteristicMap)
 
@@ -517,9 +573,20 @@ class DcmReader:
                             foundGroupCharacteristicMap.unit_y = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundGroupCharacteristicMap.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            reMatchX = re.search(r"SSTX\s+(.*)", line)
+                            reMatchY = re.search(r"SSTY\s+(.*)", line)
+                            if reMatchX:
+                                foundGroupCharacteristicMap.x_mapping = reMatchX.group(1)
+                            elif reMatchY:
+                                foundGroupCharacteristicMap.y_mapping = reMatchY.group(1)
+                            else:
+                                if foundGroupCharacteristicMap.comment is None:
+                                    foundGroupCharacteristicMap.comment = line[1:].strip() + os.linesep
+                                else:
+                                    foundGroupCharacteristicMap.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._groupCharacteristicMapList.append(foundGroupCharacteristicMap)
 
@@ -549,9 +616,13 @@ class DcmReader:
                             foundDistribution.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundDistribution.variants.update(self.parseVariant(line))
+                        elif line.startswith(comment_qualifier):
+                            if foundDistribution.comment is None:
+                                foundDistribution.comment = line[1:].strip() + os.linesep
+                            else:
+                                foundDistribution.comment += line[1:].strip() + os.linesep
                         else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
+                            logger.warning(f"Unknown parameter field: {line}")
 
                     self._distributionList.append(foundDistribution)
 
