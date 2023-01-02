@@ -1,10 +1,11 @@
 """
 Definition of DCM group characteristic line
 """
-
+from dataclasses import dataclass
 from dcmReader.dcm_characteristic_line import DcmCharacteristicLine
 
 
+@dataclass
 class DcmGroupCharacteristicLine(DcmCharacteristicLine):
     """Definition of a group characteristic line, derived from characteristic line"""
 

@@ -1,6 +1,8 @@
 """Definition of DCM parameter"""
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmParameter:
     """Definition of a parameter
 
@@ -21,7 +23,7 @@ class DcmParameter:
         self.value = None
         self.description = None
         self.display_name = None
-        self.variants = dict()
+        self.variants = {}
         self.function = None
         self.unit = None
         self.text = None
