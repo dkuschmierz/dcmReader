@@ -10,7 +10,7 @@ Sample program:
     dcm = DcmReader()
     dcm.read("tests/Sample.dcm")
 
-    readFunctions = dcm.getFunctions()
+    readFunctions = dcm.get_functions()
     for fnc in readFunctions:
         print(fnc)
 

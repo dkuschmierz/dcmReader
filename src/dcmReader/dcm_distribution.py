@@ -1,8 +1,10 @@
 """
 Definition of DCM distribution
 """
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmDistribution:
     """Definition of a distribution
 
@@ -23,7 +25,7 @@ class DcmDistribution:
         self.values = []
         self.description = None
         self.display_name = None
-        self.variants = dict()
+        self.variants = {}
         self.function = None
         self.unit_x = None
         self.x_dimension = 0

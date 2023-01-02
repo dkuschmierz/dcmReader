@@ -1,8 +1,10 @@
 """
 Definition of DCM characteristic map
 """
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmCharacteristicMap:
     """Definition of a characteristic map
 
@@ -28,10 +30,10 @@ class DcmCharacteristicMap:
 
     def __init__(self, name) -> None:
         self.name = name
-        self.values = dict()
+        self.values = {}
         self.description = None
         self.display_name = None
-        self.variants = dict()
+        self.variants = {}
         self.function = None
         self.unit_x = None
         self.unit_y = None

@@ -1,8 +1,10 @@
 """
 Definition of DCM parameter block
 """
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmParameterBlock:
     """Definition of a block parameter
 

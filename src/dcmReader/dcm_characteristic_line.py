@@ -1,8 +1,10 @@
 """
 Definition of DCM characteristic line
 """
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmCharacteristicLine:
     """Definition of a characteristic line
 
@@ -23,10 +25,10 @@ class DcmCharacteristicLine:
 
     def __init__(self, name) -> None:
         self.name = name
-        self.values = dict()
+        self.values = {}
         self.description = None
         self.display_name = None
-        self.variants = dict()
+        self.variants = {}
         self.function = None
         self.unit_x = None
         self.unit_values = None
