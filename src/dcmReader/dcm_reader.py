@@ -116,17 +116,17 @@ class DcmReader:
         """
         _dcmFormat = None
 
-        comment_qualifier = ("!", "*", ".")
-
         with open(file, "r") as f:
             for line in f:
                 # Remove whitespaces
                 line = line.strip()
 
                 # Check if line is comment
-                if line.startswith(comment_qualifier):
+                if line.startswith(("!", "*", ".")):
                     if not self._fileHeaderFinished:
-                        self._fileHeader = self._fileHeader + line[1:].strip() + os.linesep
+                        self._fileHeader = (
+                            self._fileHeader + line[1:].strip() + os.linesep
+                        )
                     continue
 
                 # At this point first comment block passed
@@ -139,11 +139,15 @@ class DcmReader:
                 # Check if format version line
                 if _dcmFormat is None:
                     if line.startswith("KONSERVIERUNG_FORMAT"):
-                        _dcmFormat = float(re.search(r"(\d\.\d)", line.strip()).group(1))
+                        _dcmFormat = float(
+                            re.search(r"(\d\.\d)", line.strip()).group(1)
+                        )
                         continue
                     else:
                         logging.info(f"Found line: {line}")
-                        raise Exception("Incorrect file structure. DCM file format has to be first entry!")
+                        raise Exception(
+                            "Incorrect file structure. DCM file format has to be first entry!"
+                        )
 
                 # Check if functions start
                 if line.startswith("FUNKTIONEN"):
@@ -151,7 +155,9 @@ class DcmReader:
                         line = f.readline()
                         if line.startswith("END"):
                             break
-                        functionMatch = re.search(r"FKT (.*?)(?: \"(.*?)?\"(?: \"(.*?)?\")?)?$", line.strip())
+                        functionMatch = re.search(
+                            r"FKT (.*?)(?: \"(.*?)?\"(?: \"(.*?)?\")?)?$", line.strip()
+                        )
                         self._functionsList.append(
                             DcmFunction(
                                 functionMatch.group(1),
@@ -175,36 +181,46 @@ class DcmReader:
                         elif line.startswith("FUNKTION"):
                             foundParameter.function = self.parseString(line)
                         elif line.startswith("WERT"):
-                            foundParameter.value = self.convertValue(line.split(" ", 1)[1].strip())
+                            foundParameter.value = self.convertValue(
+                                line.split(" ", 1)[1].strip()
+                            )
                         elif line.startswith("EINHEIT_W"):
                             foundParameter.unit = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundParameter.variants.update(self.parseVariant(line))
                         elif line.startswith("TEXT"):
                             foundParameter.text = self.parseString(line)
-                        elif line.startswith(comment_qualifier):
-                            if foundParameter.comment is None:
-                                foundParameter.comment = line[1:].strip() + os.linesep
-                            else:
-                                foundParameter.comment += line[1:].strip() + os.linesep
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._parameterList.append(foundParameter)
 
                 # Check if parameter block start
                 elif line.startswith("FESTWERTEBLOCK"):
-                    blockData = re.search(r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?", line.strip())
+                    blockData = re.search(
+                        r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?",
+                        line.strip(),
+                    )
                     foundBlockParameter = DcmParameterBlock(blockData.group(1))
-                    foundBlockParameter.x_dimension = self.convertValue(blockData.group(2))
+                    foundBlockParameter.x_dimension = self.convertValue(
+                        blockData.group(2)
+                    )
                     foundBlockParameter.y_dimension = (
-                        self.convertValue(blockData.group(3)) if blockData.group(3) is not None else 1
+                        self.convertValue(blockData.group(3))
+                        if blockData.group(3) is not None
+                        else 1
                     )
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(foundBlockParameter.values) != foundBlockParameter.y_dimension:
-                                logger.error(f"Y dimension in {foundBlockParameter.name} do not match description!")
+                            if (
+                                len(foundBlockParameter.values)
+                                != foundBlockParameter.y_dimension
+                            ):
+                                logger.error(
+                                    f"Y dimension in {foundBlockParameter.name} do not match description!"
+                                )
                             break
                         elif line.startswith("LANGNAME"):
                             foundBlockParameter.description = self.parseString(line)
@@ -215,19 +231,17 @@ class DcmReader:
                         elif line.startswith("WERT"):
                             parameters = self.parseBlockParameters(line)
                             if len(parameters) != foundBlockParameter.x_dimension:
-                                logger.error(f"X dimension in {foundBlockParameter.name} do not match description!")
+                                logger.error(
+                                    f"X dimension in {foundBlockParameter.name} do not match description!"
+                                )
                             foundBlockParameter.values.append(parameters)
                         elif line.startswith("EINHEIT_W"):
                             foundBlockParameter.unit = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundBlockParameter.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            if foundBlockParameter.comment is None:
-                                foundBlockParameter.comment = line[1:].strip() + os.linesep
-                            else:
-                                foundBlockParameter.comment += line[1:].strip() + os.linesep
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._blockParameterList.append(foundBlockParameter)
 
@@ -235,7 +249,9 @@ class DcmReader:
                 elif line.startswith("KENNLINIE"):
                     reMatch = re.search(r"KENNLINIE\s+(.*?)\s+(\d+)", line.strip())
                     foundCharacteristicLine = DcmCharacteristicLine(reMatch.group(1))
-                    foundCharacteristicLine.x_dimension = self.convertValue(reMatch.group(2))
+                    foundCharacteristicLine.x_dimension = self.convertValue(
+                        reMatch.group(2)
+                    )
                     parameters = []
                     stx = []
 
@@ -243,7 +259,9 @@ class DcmReader:
                         line = f.readline().strip()
                         if line.startswith("END"):
                             if len(stx) != foundCharacteristicLine.x_dimension:
-                                logger.error(f"X dimension in {foundCharacteristicLine.name} do not match description!")
+                                logger.error(
+                                    f"X dimension in {foundCharacteristicLine.name} do not match description!"
+                                )
                             if len(parameters) != foundCharacteristicLine.x_dimension:
                                 logger.error(
                                     f"Values dimension in {foundCharacteristicLine.name} do not match description!"
@@ -253,7 +271,9 @@ class DcmReader:
                         elif line.startswith("LANGNAME"):
                             foundCharacteristicLine.description = self.parseString(line)
                         elif line.startswith("DISPLAYNAME"):
-                            foundCharacteristicLine.display_name = self.parseString(line)
+                            foundCharacteristicLine.display_name = self.parseString(
+                                line
+                            )
                         elif line.startswith("FUNKTION"):
                             foundCharacteristicLine.function = self.parseString(line)
                         elif line.startswith("WERT"):
@@ -265,26 +285,24 @@ class DcmReader:
                         elif line.startswith("EINHEIT_X"):
                             foundCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
-                            foundCharacteristicLine.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatch = re.search(r"SSTX\s+(.*)", line)
-                            if reMatch:
-                                foundCharacteristicLine.x_mapping = reMatch.group(1)
-                            else:
-                                if foundCharacteristicLine.comment is None:
-                                    foundCharacteristicLine.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundCharacteristicLine.comment += line[1:].strip() + os.linesep
+                            foundCharacteristicLine.variants.update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._characteristicLineList.append(foundCharacteristicLine)
 
                 # Check if fixed characteristic line
                 elif line.startswith("FESTKENNLINIE"):
                     reMatch = re.search(r"FESTKENNLINIE\s+(.*?)\s+(\d+)", line.strip())
-                    foundFixedCharacteristicLine = DcmFixedCharacteristicLine(reMatch.group(1))
-                    foundFixedCharacteristicLine.x_dimension = self.convertValue(reMatch.group(2))
+                    foundFixedCharacteristicLine = DcmFixedCharacteristicLine(
+                        reMatch.group(1)
+                    )
+                    foundFixedCharacteristicLine.x_dimension = self.convertValue(
+                        reMatch.group(2)
+                    )
                     parameters = []
                     stx = []
 
@@ -295,54 +313,72 @@ class DcmReader:
                                 logger.error(
                                     f"X dimension in {foundFixedCharacteristicLine.name} do not match description!"
                                 )
-                            if len(parameters) != foundFixedCharacteristicLine.x_dimension:
+                            if (
+                                len(parameters)
+                                != foundFixedCharacteristicLine.x_dimension
+                            ):
                                 logger.error(
                                     f"Values dimension in {foundFixedCharacteristicLine.name} do not match description!"
                                 )
-                            foundFixedCharacteristicLine.values = dict(zip(stx, parameters))
+                            foundFixedCharacteristicLine.values = dict(
+                                zip(stx, parameters)
+                            )
                             break
                         elif line.startswith("LANGNAME"):
-                            foundFixedCharacteristicLine.description = self.parseString(line)
+                            foundFixedCharacteristicLine.description = self.parseString(
+                                line
+                            )
                         elif line.startswith("DISPLAYNAME"):
-                            foundFixedCharacteristicLine.display_name = self.parseString(line)
+                            foundFixedCharacteristicLine.display_name = (
+                                self.parseString(line)
+                            )
                         elif line.startswith("FUNKTION"):
-                            foundFixedCharacteristicLine.function = self.parseString(line)
+                            foundFixedCharacteristicLine.function = self.parseString(
+                                line
+                            )
                         elif line.startswith("WERT"):
                             parameters.extend(self.parseBlockParameters(line))
                         elif line.startswith("ST/X"):
                             stx.extend(self.parseBlockParameters(line))
                         elif line.startswith("EINHEIT_W"):
-                            foundFixedCharacteristicLine.unit_values = self.parseString(line)
+                            foundFixedCharacteristicLine.unit_values = self.parseString(
+                                line
+                            )
                         elif line.startswith("EINHEIT_X"):
                             foundFixedCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
-                            foundFixedCharacteristicLine.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatch = re.search(r"SSTX\s+(.*)", line)
-                            if reMatch:
-                                foundFixedCharacteristicLine.x_mapping = reMatch.group(1)
-                            else:
-                                if foundFixedCharacteristicLine.comment is None:
-                                    foundFixedCharacteristicLine.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundFixedCharacteristicLine.comment += line[1:].strip() + os.linesep
+                            foundFixedCharacteristicLine.variants.update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
-                    self._fixedCharacteristicLineList.append(foundFixedCharacteristicLine)
+                    self._fixedCharacteristicLineList.append(
+                        foundFixedCharacteristicLine
+                    )
 
                 # Check if group characteristic line
                 elif line.startswith("GRUPPENKENNLINIE"):
-                    reMatch = re.search(r"GRUPPENKENNLINIE\s+(.*?)\s+(\d+)", line.strip())
-                    foundGroupCharacteristicLine = DcmGroupCharacteristicLine(reMatch.group(1))
-                    foundGroupCharacteristicLine.x_dimension = self.convertValue(reMatch.group(2))
+                    reMatch = re.search(
+                        r"GRUPPENKENNLINIE\s+(.*?)\s+(\d+)", line.strip()
+                    )
+                    foundGroupCharacteristicLine = DcmGroupCharacteristicLine(
+                        reMatch.group(1)
+                    )
+                    foundGroupCharacteristicLine.x_dimension = self.convertValue(
+                        reMatch.group(2)
+                    )
                     parameters = []
                     stx = []
 
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(parameters) != foundGroupCharacteristicLine.x_dimension:
+                            if (
+                                len(parameters)
+                                != foundGroupCharacteristicLine.x_dimension
+                            ):
                                 logger.error(
                                     f"Values dimension in {foundGroupCharacteristicLine.name} do not match description!"
                                 )
@@ -350,119 +386,202 @@ class DcmReader:
                                 logger.error(
                                     f"X dimension in {foundGroupCharacteristicLine.name} do not match description!"
                                 )
-                            foundGroupCharacteristicLine.values = dict(zip(stx, parameters))
+                            foundGroupCharacteristicLine.values = dict(
+                                zip(stx, parameters)
+                            )
                             break
                         elif line.startswith("LANGNAME"):
-                            foundGroupCharacteristicLine.description = self.parseString(line)
+                            foundGroupCharacteristicLine.description = self.parseString(
+                                line
+                            )
                         elif line.startswith("DISPLAYNAME"):
-                            foundGroupCharacteristicLine.display_name = self.parseString(line)
+                            foundGroupCharacteristicLine.display_name = (
+                                self.parseString(line)
+                            )
                         elif line.startswith("FUNKTION"):
-                            foundGroupCharacteristicLine.function = self.parseString(line)
+                            foundGroupCharacteristicLine.function = self.parseString(
+                                line
+                            )
                         elif line.startswith("WERT"):
                             parameters.extend(self.parseBlockParameters(line))
                         elif line.startswith("ST/X"):
                             stx.extend(self.parseBlockParameters(line))
                         elif line.startswith("EINHEIT_W"):
-                            foundGroupCharacteristicLine.unit_values = self.parseString(line)
+                            foundGroupCharacteristicLine.unit_values = self.parseString(
+                                line
+                            )
                         elif line.startswith("EINHEIT_X"):
                             foundGroupCharacteristicLine.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
-                            foundGroupCharacteristicLine.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatch = re.search(r"SSTX\s+(.*)", line)
-                            if reMatch:
-                                foundGroupCharacteristicLine.x_mapping = reMatch.group(1)
-                            else:
-                                if foundGroupCharacteristicLine.comment is None:
-                                    foundGroupCharacteristicLine.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundGroupCharacteristicLine.comment += line[1:].strip() + os.linesep
+                            foundGroupCharacteristicLine.variants.update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
-                    self._groupCharacteristicLineList.append(foundGroupCharacteristicLine)
+                    self._groupCharacteristicLineList.append(
+                        foundGroupCharacteristicLine
+                    )
 
                 # Check for characteristic map
                 elif line.startswith("KENNFELD "):
-                    reMatch = re.search(r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
+                    # reMatch = re.search(r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
+                    # foundCharacteristicMap = DcmCharacteristicMap(reMatch.group(1))
+                    # # foundCharacteristicMap.x_dimension = self.convertValue(reMatch.group(2))
+                    # # foundCharacteristicMap.y_dimension = self.convertValue(reMatch.group(3))
+                    # stx = []
+                    # sty = None
+
+                    # while True:
+                    #     line = f.readline().strip()
+                    #     if line.startswith("END"):
+                    #         if len(foundCharacteristicMap.values) != foundCharacteristicMap.y_dimension:
+                    #             logger.error(
+                    #                 f"Values dimension in {foundCharacteristicMap.name} does not match description!"
+                    #             )
+                    #         if len(stx) != foundCharacteristicMap.x_dimension:
+                    #             logger.error(f"X dimension in {foundCharacteristicMap.name} do not match description!")
+                    #         for name, entry in foundCharacteristicMap.values.items():
+                    #             if len(entry) != foundCharacteristicMap.x_dimension:
+                    #                 logger.error(
+                    #                     f"Values dimension in {foundCharacteristicMap.name} does not match description!"
+                    #                 )
+                    #             else:
+                    #                 foundCharacteristicMap.values[name] = dict(zip(stx, entry))
+                    #         break
+                    #     elif line.startswith("LANGNAME"):
+                    #         foundCharacteristicMap.description = self.parseString(line)
+                    #     elif line.startswith("DISPLAYNAME"):
+                    #         foundCharacteristicMap.display_name = self.parseString(line)
+                    #     elif line.startswith("FUNKTION"):
+                    #         foundCharacteristicMap.function = self.parseString(line)
+                    #     elif line.startswith("WERT"):
+                    #         if stx is None or sty is None:
+                    #             raise ValueError(f"Values before stx/sty in {foundCharacteristicMap.name}")
+                    #         parameters = self.parseBlockParameters(line)
+                    #         if sty not in foundCharacteristicMap.values.keys():
+                    #             foundCharacteristicMap.values[sty] = []
+                    #         foundCharacteristicMap.values[sty].extend(parameters)
+                    #     elif line.startswith("ST/X"):
+                    #         stx.extend(self.parseBlockParameters(line))
+                    #     elif line.startswith("ST/Y"):
+                    #         sty = self.convertValue(line.split(" ", 1)[1].strip())
+                    #     elif line.startswith("EINHEIT_W"):
+                    #         foundCharacteristicMap.unit_values = self.parseString(line)
+                    #     elif line.startswith("EINHEIT_X"):
+                    #         foundCharacteristicMap.unit_x = self.parseString(line)
+                    #     elif line.startswith("EINHEIT_Y"):
+                    #         foundCharacteristicMap.unit_y = self.parseString(line)
+                    #     elif line.startswith("VAR"):
+                    #         foundCharacteristicMap.variants.update(self.parseVariant(line))
+                    #     else:
+                    #         if not line.startswith("*"):
+                    #             logger.warning(f"Unknown parameter field: {line}")
+
+                    reMatch = re.search(
+                        r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip()
+                    )
                     foundCharacteristicMap = DcmCharacteristicMap(reMatch.group(1))
-                    foundCharacteristicMap.x_dimension = self.convertValue(reMatch.group(2))
-                    foundCharacteristicMap.y_dimension = self.convertValue(reMatch.group(3))
+                    x_dimension = self.convertValue(reMatch.group(2))
+                    y_dimension = self.convertValue(reMatch.group(3))
                     stx = []
                     sty = None
+                    stys = []
+                    _values = dict()
 
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(foundCharacteristicMap.values) != foundCharacteristicMap.y_dimension:
+                            if len(_values) != y_dimension:
                                 logger.error(
                                     f"Values dimension in {foundCharacteristicMap.name} does not match description!"
                                 )
-                            if len(stx) != foundCharacteristicMap.x_dimension:
-                                logger.error(f"X dimension in {foundCharacteristicMap.name} do not match description!")
-                            for name, entry in foundCharacteristicMap.values.items():
-                                if len(entry) != foundCharacteristicMap.x_dimension:
+                            if len(stx) != x_dimension:
+                                logger.error(
+                                    f"X dimension in {foundCharacteristicMap.name} do not match description!"
+                                )
+                            for name, entry in _values.items():
+                                if len(entry) != x_dimension:
                                     logger.error(
                                         f"Values dimension in {foundCharacteristicMap.name} does not match description!"
                                     )
-                                else:
-                                    foundCharacteristicMap.values[name] = dict(zip(stx, entry))
+
+                            foundCharacteristicMap.values = list(_values.values())
+                            foundCharacteristicMap.coords = (stx, stys)
                             break
                         elif line.startswith("LANGNAME"):
-                            foundCharacteristicMap.description = self.parseString(line)
+                            foundCharacteristicMap.attrs[
+                                "description"
+                            ] = self.parseString(line)
                         elif line.startswith("DISPLAYNAME"):
-                            foundCharacteristicMap.display_name = self.parseString(line)
+                            foundCharacteristicMap.attrs[
+                                "display_name"
+                            ] = self.parseString(line)
                         elif line.startswith("FUNKTION"):
-                            foundCharacteristicMap.function = self.parseString(line)
+                            foundCharacteristicMap.attrs["function"] = self.parseString(
+                                line
+                            )
                         elif line.startswith("WERT"):
-                            if stx is None or sty is None:
-                                raise ValueError(f"Values before stx/sty in {foundCharacteristicMap.name}")
+                            if not (stx or stys):
+                                raise ValueError(
+                                    f"Values before stx/sty in {foundCharacteristicMap.name}"
+                                )
                             parameters = self.parseBlockParameters(line)
-                            if sty not in foundCharacteristicMap.values.keys():
-                                foundCharacteristicMap.values[sty] = []
-                            foundCharacteristicMap.values[sty].extend(parameters)
+                            if sty not in _values.keys():
+                                _values[sty] = []
+                            _values[sty].extend(parameters)
                         elif line.startswith("ST/X"):
                             stx.extend(self.parseBlockParameters(line))
                         elif line.startswith("ST/Y"):
                             sty = self.convertValue(line.split(" ", 1)[1].strip())
+                            stys.append(sty)
                         elif line.startswith("EINHEIT_W"):
-                            foundCharacteristicMap.unit_values = self.parseString(line)
+                            foundCharacteristicMap.attrs["units"] = self.parseString(
+                                line
+                            )
                         elif line.startswith("EINHEIT_X"):
-                            foundCharacteristicMap.unit_x = self.parseString(line)
+                            foundCharacteristicMap.attrs["units_x"] = self.parseString(
+                                line
+                            )
                         elif line.startswith("EINHEIT_Y"):
-                            foundCharacteristicMap.unit_y = self.parseString(line)
+                            foundCharacteristicMap.attrs["units_y"] = self.parseString(
+                                line
+                            )
                         elif line.startswith("VAR"):
-                            foundCharacteristicMap.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatchX = re.search(r"SSTX\s+(.*)", line)
-                            reMatchY = re.search(r"SSTY\s+(.*)", line)
-                            if reMatchX:
-                                foundCharacteristicMap.x_mapping = reMatchX.group(1)
-                            elif reMatchY:
-                                foundCharacteristicMap.y_mapping = reMatchY.group(1)
-                            else:
-                                if foundCharacteristicMap.comment is None:
-                                    foundCharacteristicMap.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundCharacteristicMap.comment += line[1:].strip() + os.linesep
+                            foundCharacteristicMap.attrs["variants"].update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._characteristicMapList.append(foundCharacteristicMap)
 
                 # Check for fixed characteristic map
                 elif line.startswith("FESTKENNFELD "):
-                    reMatch = re.search(r"FESTKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
-                    foundFixedCharacteristicMap = DcmFixedCharacteristicMap(reMatch.group(1))
-                    foundFixedCharacteristicMap.x_dimension = self.convertValue(reMatch.group(2))
-                    foundFixedCharacteristicMap.y_dimension = self.convertValue(reMatch.group(3))
+                    reMatch = re.search(
+                        r"FESTKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip()
+                    )
+                    foundFixedCharacteristicMap = DcmFixedCharacteristicMap(
+                        reMatch.group(1)
+                    )
+                    foundFixedCharacteristicMap.x_dimension = self.convertValue(
+                        reMatch.group(2)
+                    )
+                    foundFixedCharacteristicMap.y_dimension = self.convertValue(
+                        reMatch.group(3)
+                    )
                     stx = []
                     sty = None
 
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(foundFixedCharacteristicMap.values) != foundFixedCharacteristicMap.y_dimension:
+                            if (
+                                len(foundFixedCharacteristicMap.values)
+                                != foundFixedCharacteristicMap.y_dimension
+                            ):
                                 logger.error(
                                     f"Values dimension in {foundFixedCharacteristicMap.name} does not match description!"
                                 )
@@ -470,23 +589,39 @@ class DcmReader:
                                 logger.error(
                                     f"X dimension in {foundFixedCharacteristicMap.name} do not match description!"
                                 )
-                            for name, entry in foundFixedCharacteristicMap.values.items():
-                                if len(entry) != foundFixedCharacteristicMap.x_dimension:
+                            for (
+                                name,
+                                entry,
+                            ) in foundFixedCharacteristicMap.values.items():
+                                if (
+                                    len(entry)
+                                    != foundFixedCharacteristicMap.x_dimension
+                                ):
                                     logger.error(
                                         f"Values dimension in {foundFixedCharacteristicMap.name} does not match description!"
                                     )
                                 else:
-                                    foundFixedCharacteristicMap.values[name] = dict(zip(stx, entry))
+                                    foundFixedCharacteristicMap.values[name] = dict(
+                                        zip(stx, entry)
+                                    )
                             break
                         elif line.startswith("LANGNAME"):
-                            foundFixedCharacteristicMap.description = self.parseString(line)
+                            foundFixedCharacteristicMap.description = self.parseString(
+                                line
+                            )
                         elif line.startswith("DISPLAYNAME"):
-                            foundFixedCharacteristicMap.display_name = self.parseString(line)
+                            foundFixedCharacteristicMap.display_name = self.parseString(
+                                line
+                            )
                         elif line.startswith("FUNKTION"):
-                            foundFixedCharacteristicMap.function = self.parseString(line)
+                            foundFixedCharacteristicMap.function = self.parseString(
+                                line
+                            )
                         elif line.startswith("WERT"):
                             if stx is None or sty is None:
-                                raise ValueError(f"Values before stx/sty in {foundFixedCharacteristicMap.name}")
+                                raise ValueError(
+                                    f"Values before stx/sty in {foundFixedCharacteristicMap.name}"
+                                )
                             parameters = self.parseBlockParameters(line)
                             if sty not in foundFixedCharacteristicMap.values.keys():
                                 foundFixedCharacteristicMap.values[sty] = []
@@ -496,103 +631,197 @@ class DcmReader:
                         elif line.startswith("ST/Y"):
                             sty = self.convertValue(line.split(" ", 1)[1].strip())
                         elif line.startswith("EINHEIT_W"):
-                            foundFixedCharacteristicMap.unit_values = self.parseString(line)
+                            foundFixedCharacteristicMap.unit_values = self.parseString(
+                                line
+                            )
                         elif line.startswith("EINHEIT_X"):
                             foundFixedCharacteristicMap.unit_x = self.parseString(line)
                         elif line.startswith("EINHEIT_Y"):
                             foundFixedCharacteristicMap.unit_y = self.parseString(line)
                         elif line.startswith("VAR"):
-                            foundFixedCharacteristicMap.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatchX = re.search(r"SSTX\s+(.*)", line)
-                            reMatchY = re.search(r"SSTY\s+(.*)", line)
-                            if reMatchX:
-                                foundFixedCharacteristicMap.x_mapping = reMatchX.group(1)
-                            elif reMatchY:
-                                foundFixedCharacteristicMap.y_mapping = reMatchY.group(1)
-                            else:
-                                if foundFixedCharacteristicMap.comment is None:
-                                    foundFixedCharacteristicMap.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundFixedCharacteristicMap.comment += line[1:].strip() + os.linesep
+                            foundFixedCharacteristicMap.variants.update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._fixedCharacteristicMapList.append(foundFixedCharacteristicMap)
 
                 # Check for group characteristic map
                 elif line.startswith("GRUPPENKENNFELD "):
-                    reMatch = re.search(r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
-                    foundGroupCharacteristicMap = DcmGroupCharacteristicMap(reMatch.group(1))
-                    foundGroupCharacteristicMap.x_dimension = self.convertValue(reMatch.group(2))
-                    foundGroupCharacteristicMap.y_dimension = self.convertValue(reMatch.group(3))
+                    # reMatch = re.search(
+                    #     r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip()
+                    # )
+                    # foundGroupCharacteristicMap = DcmGroupCharacteristicMap(
+                    #     reMatch.group(1)
+                    # )
+                    # foundGroupCharacteristicMap.x_dimension = self.convertValue(
+                    #     reMatch.group(2)
+                    # )
+                    # foundGroupCharacteristicMap.y_dimension = self.convertValue(
+                    #     reMatch.group(3)
+                    # )
+                    # stx = []
+                    # sty = None
+
+                    # while True:
+                    #     line = f.readline().strip()
+                    #     if line.startswith("END"):
+                    #         if (
+                    #             len(foundGroupCharacteristicMap.values)
+                    #             != foundGroupCharacteristicMap.y_dimension
+                    #         ):
+                    #             logger.error(
+                    #                 f"Values dimension in {foundGroupCharacteristicMap.name} does not match description!"
+                    #             )
+                    #         if len(stx) != foundGroupCharacteristicMap.x_dimension:
+                    #             logger.error(
+                    #                 f"X dimension in {foundGroupCharacteristicMap.name} do not match description!"
+                    #             )
+                    #         for (
+                    #             name,
+                    #             entry,
+                    #         ) in foundGroupCharacteristicMap.values.items():
+                    #             if (
+                    #                 len(entry)
+                    #                 != foundGroupCharacteristicMap.x_dimension
+                    #             ):
+                    #                 logger.error(
+                    #                     f"Values dimension in {foundGroupCharacteristicMap.name} does not match description!"
+                    #                 )
+                    #             else:
+                    #                 foundGroupCharacteristicMap.values[name] = dict(
+                    #                     zip(stx, entry)
+                    #                 )
+                    #         break
+                    #     elif line.startswith("LANGNAME"):
+                    #         foundGroupCharacteristicMap.description = self.parseString(
+                    #             line
+                    #         )
+                    #     elif line.startswith("DISPLAYNAME"):
+                    #         foundGroupCharacteristicMap.display_name = self.parseString(
+                    #             line
+                    #         )
+                    #     elif line.startswith("FUNKTION"):
+                    #         foundGroupCharacteristicMap.function = self.parseString(
+                    #             line
+                    #         )
+                    #     elif line.startswith("WERT"):
+                    #         if stx is None or sty is None:
+                    #             raise ValueError(
+                    #                 f"Values before stx/sty in {foundGroupCharacteristicMap.name}"
+                    #             )
+                    #         parameters = self.parseBlockParameters(line)
+                    #         if sty not in foundGroupCharacteristicMap.values.keys():
+                    #             foundGroupCharacteristicMap.values[sty] = []
+                    #         foundGroupCharacteristicMap.values[sty].extend(parameters)
+                    #     elif line.startswith("ST/X"):
+                    #         stx.extend(self.parseBlockParameters(line))
+                    #     elif line.startswith("ST/Y"):
+                    #         sty = self.convertValue(line.split(" ", 1)[1].strip())
+                    #     elif line.startswith("EINHEIT_W"):
+                    #         foundGroupCharacteristicMap.unit_values = self.parseString(
+                    #             line
+                    #         )
+                    #     elif line.startswith("EINHEIT_X"):
+                    #         foundGroupCharacteristicMap.unit_x = self.parseString(line)
+                    #     elif line.startswith("EINHEIT_Y"):
+                    #         foundGroupCharacteristicMap.unit_y = self.parseString(line)
+                    #     elif line.startswith("VAR"):
+                    #         foundGroupCharacteristicMap.variants.update(
+                    #             self.parseVariant(line)
+                    #         )
+                    #     else:
+                    #         if not line.startswith("*"):
+                    #             logger.warning(f"Unknown parameter field: {line}")
+
+                    reMatch = re.search(
+                        r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip()
+                    )
+                    foundGroupCharacteristicMap = DcmGroupCharacteristicMap(
+                        reMatch.group(1)
+                    )
+                    x_dimension = self.convertValue(reMatch.group(2))
+                    y_dimension = self.convertValue(reMatch.group(3))
                     stx = []
                     sty = None
+                    stys = []
+                    _values = dict()
 
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(foundGroupCharacteristicMap.values) != foundGroupCharacteristicMap.y_dimension:
+                            if len(_values) != y_dimension:
                                 logger.error(
                                     f"Values dimension in {foundGroupCharacteristicMap.name} does not match description!"
                                 )
-                            if len(stx) != foundGroupCharacteristicMap.x_dimension:
+                            if len(stx) != x_dimension:
                                 logger.error(
                                     f"X dimension in {foundGroupCharacteristicMap.name} do not match description!"
                                 )
-                            for name, entry in foundGroupCharacteristicMap.values.items():
-                                if len(entry) != foundGroupCharacteristicMap.x_dimension:
+                            for name, entry in _values.items():
+                                if len(entry) != x_dimension:
                                     logger.error(
                                         f"Values dimension in {foundGroupCharacteristicMap.name} does not match description!"
                                     )
-                                else:
-                                    foundGroupCharacteristicMap.values[name] = dict(zip(stx, entry))
+
+                            foundGroupCharacteristicMap.values = list(_values.values())
+                            foundGroupCharacteristicMap.coords = (stx, stys)
                             break
                         elif line.startswith("LANGNAME"):
-                            foundGroupCharacteristicMap.description = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "description"
+                            ] = self.parseString(line)
                         elif line.startswith("DISPLAYNAME"):
-                            foundGroupCharacteristicMap.display_name = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "display_name"
+                            ] = self.parseString(line)
                         elif line.startswith("FUNKTION"):
-                            foundGroupCharacteristicMap.function = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "function"
+                            ] = self.parseString(line)
                         elif line.startswith("WERT"):
-                            if stx is None or sty is None:
-                                raise ValueError(f"Values before stx/sty in {foundGroupCharacteristicMap.name}")
+                            if not (stx or stys):
+                                raise ValueError(
+                                    f"Values before stx/sty in {foundGroupCharacteristicMap.name}"
+                                )
                             parameters = self.parseBlockParameters(line)
-                            if sty not in foundGroupCharacteristicMap.values.keys():
-                                foundGroupCharacteristicMap.values[sty] = []
-                            foundGroupCharacteristicMap.values[sty].extend(parameters)
+                            if sty not in _values.keys():
+                                _values[sty] = []
+                            _values[sty].extend(parameters)
                         elif line.startswith("ST/X"):
                             stx.extend(self.parseBlockParameters(line))
                         elif line.startswith("ST/Y"):
                             sty = self.convertValue(line.split(" ", 1)[1].strip())
+                            stys.append(sty)
                         elif line.startswith("EINHEIT_W"):
-                            foundGroupCharacteristicMap.unit_values = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "units"
+                            ] = self.parseString(line)
                         elif line.startswith("EINHEIT_X"):
-                            foundGroupCharacteristicMap.unit_x = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "units_x"
+                            ] = self.parseString(line)
                         elif line.startswith("EINHEIT_Y"):
-                            foundGroupCharacteristicMap.unit_y = self.parseString(line)
+                            foundGroupCharacteristicMap.attrs[
+                                "units_y"
+                            ] = self.parseString(line)
                         elif line.startswith("VAR"):
-                            foundGroupCharacteristicMap.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            reMatchX = re.search(r"SSTX\s+(.*)", line)
-                            reMatchY = re.search(r"SSTY\s+(.*)", line)
-                            if reMatchX:
-                                foundGroupCharacteristicMap.x_mapping = reMatchX.group(1)
-                            elif reMatchY:
-                                foundGroupCharacteristicMap.y_mapping = reMatchY.group(1)
-                            else:
-                                if foundGroupCharacteristicMap.comment is None:
-                                    foundGroupCharacteristicMap.comment = line[1:].strip() + os.linesep
-                                else:
-                                    foundGroupCharacteristicMap.comment += line[1:].strip() + os.linesep
+                            foundGroupCharacteristicMap.attrs["variants"].update(
+                                self.parseVariant(line)
+                            )
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._groupCharacteristicMapList.append(foundGroupCharacteristicMap)
 
                 # Check if distribution
                 elif line.startswith("STUETZSTELLENVERTEILUNG"):
-                    reMatch = re.search(r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line.strip())
+                    reMatch = re.search(
+                        r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line.strip()
+                    )
                     foundDistribution = DcmDistribution(reMatch.group(1))
                     foundDistribution.x_dimension = self.convertValue(reMatch.group(2))
                     parameters = None
@@ -601,8 +830,13 @@ class DcmReader:
                     while True:
                         line = f.readline().strip()
                         if line.startswith("END"):
-                            if len(foundDistribution.values) != foundDistribution.x_dimension:
-                                logger.error(f"X dimension in {foundDistribution.name} do not match description!")
+                            if (
+                                len(foundDistribution.values)
+                                != foundDistribution.x_dimension
+                            ):
+                                logger.error(
+                                    f"X dimension in {foundDistribution.name} do not match description!"
+                                )
                             break
                         elif line.startswith("LANGNAME"):
                             foundDistribution.description = self.parseString(line)
@@ -611,18 +845,16 @@ class DcmReader:
                         elif line.startswith("FUNKTION"):
                             foundDistribution.function = self.parseString(line)
                         elif line.startswith("ST/X"):
-                            foundDistribution.values.extend(self.parseBlockParameters(line))
+                            foundDistribution.values.extend(
+                                self.parseBlockParameters(line)
+                            )
                         elif line.startswith("EINHEIT_X"):
                             foundDistribution.unit_x = self.parseString(line)
                         elif line.startswith("VAR"):
                             foundDistribution.variants.update(self.parseVariant(line))
-                        elif line.startswith(comment_qualifier):
-                            if foundDistribution.comment is None:
-                                foundDistribution.comment = line[1:].strip() + os.linesep
-                            else:
-                                foundDistribution.comment += line[1:].strip() + os.linesep
                         else:
-                            logger.warning(f"Unknown parameter field: {line}")
+                            if not line.startswith("*"):
+                                logger.warning(f"Unknown parameter field: {line}")
 
                     self._distributionList.append(foundDistribution)
 
