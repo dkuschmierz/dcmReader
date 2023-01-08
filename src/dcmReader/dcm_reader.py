@@ -549,12 +549,10 @@ class DcmReader:
                 elif line.startswith("GRUPPENKENNFELD "):
                     re_match = re.search(r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
 
-                    found_group_characteristic_map = DcmGroupCharacteristicMap(
-                        re_match.group(1)
-                    )
+                    found_group_characteristic_map = DcmGroupCharacteristicMap(re_match.group(1))
                     x_dimension = self.convert_value(re_match.group(2))
                     y_dimension = self.convert_value(re_match.group(3))
-                    
+
                     stx = []
                     sty = None
                     stys = []
@@ -569,34 +567,26 @@ class DcmReader:
                                 )
                             if len(stx) != x_dimension:
                                 logger.error(
-                                    f"X dimension in {found_group_characteristic_map.name} do not match description!", 
+                                    f"X dimension in {found_group_characteristic_map.name} do not match description!",
                                 )
                             for name, entry in _values.items():
                                 if len(entry) != x_dimension:
                                     logger.error(
-                                        "Values dimension in {found_group_characteristic_map.name} does not match description!", 
+                                        "Values dimension in {found_group_characteristic_map.name} does not match description!",
                                     )
 
                             found_group_characteristic_map.values = list(_values.values())
                             found_group_characteristic_map.coords = (stx, stys)
                             break
                         elif line.startswith("LANGNAME"):
-                            found_group_characteristic_map.attrs[
-                                "description"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["description"] = self.parse_string(line)
                         elif line.startswith("DISPLAYNAME"):
-                            found_group_characteristic_map.attrs[
-                                "display_name"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["display_name"] = self.parse_string(line)
                         elif line.startswith("FUNKTION"):
-                            found_group_characteristic_map.attrs[
-                                "function"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["function"] = self.parse_string(line)
                         elif line.startswith("WERT"):
                             if not (stx or stys):
-                                raise ValueError(
-                                    f"Values before stx/sty in {found_group_characteristic_map.name}"
-                                )
+                                raise ValueError(f"Values before stx/sty in {found_group_characteristic_map.name}")
                             parameters = self.parse_block_parameters(line)
                             if sty not in _values.keys():
                                 _values[sty] = []
@@ -607,21 +597,25 @@ class DcmReader:
                             sty = self.convert_value(line.split(" ", 1)[1].strip())
                             stys.append(sty)
                         elif line.startswith("EINHEIT_W"):
-                            found_group_characteristic_map.attrs[
-                                "units"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["units"] = self.parse_string(line)
                         elif line.startswith("EINHEIT_X"):
-                            found_group_characteristic_map.attrs[
-                                "units_x"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["units_x"] = self.parse_string(line)
                         elif line.startswith("EINHEIT_Y"):
-                            found_group_characteristic_map.attrs[
-                                "units_y"
-                            ] = self.parse_string(line)
+                            found_group_characteristic_map.attrs["units_y"] = self.parse_string(line)
                         elif line.startswith("VAR"):
-                            found_group_characteristic_map.attrs["variants"].update(
-                                self.parse_variant(line)
-                            )
+                            found_group_characteristic_map.attrs["variants"].update(self.parse_variant(line))
+                        elif line.startswith(comment_qualifier):
+                            re_match_x = re.search(r"SSTX\s+(.*)", line)
+                            re_match_y = re.search(r"SSTY\s+(.*)", line)
+                            if re_match_x:
+                                found_group_characteristic_map.attrs["x_mapping"] = re_match_x.group(1)
+                            elif re_match_y:
+                                found_group_characteristic_map.attrs["y_mapping"] = re_match_y.group(1)
+                            else:
+                                if found_group_characteristic_map.attrs["comment"] is None:
+                                    found_group_characteristic_map.attrs["comment"] = line[1:].strip() + os.linesep
+                                else:
+                                    found_group_characteristic_map.attrs["comment"] += line[1:].strip() + os.linesep
                         else:
                             if not line.startswith("*"):
                                 logger.warning(f"Unknown parameter field: {line}")
