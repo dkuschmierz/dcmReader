@@ -1,6 +1,8 @@
 """Definition of DCM function"""
+from dataclasses import dataclass
 
 
+@dataclass
 class DcmFunction:
     """Definition of a function
 

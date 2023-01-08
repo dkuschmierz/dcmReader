@@ -9,5 +9,14 @@ build-backend = "setuptools.build_meta"
 line-length = 120
 
 [tool.pylint.message_control]
-max-attributes=12
+max-attributes=15
 max-line-length=120
+max-branches=15
+max-locals=25
+max-nested-blocks=6
+disable = [
+    "too-many-branches",
+    "too-many-statements",
+    "duplicate-code",
+    "invalid-name",
+]

@@ -1,13 +1,16 @@
+"""
+Main program which prints information about DCM file
+"""
+
 import os
 import sys
 
 from dcmReader.dcm_reader import DcmReader
 
 if __name__ == "__main__":
-    """Parses a DCM file and prints some information"""
     if len(sys.argv) < 2:
         print("Please specify dcm-file to parse")
-        exit()
+        sys.exit(1)
 
     filename = sys.argv[1]
 
@@ -17,16 +20,16 @@ if __name__ == "__main__":
         dcm = DcmReader()
         dcm.read(filename)
 
-        readFunctions = dcm.getFunctions()
-        readParameters = dcm.getParameters()
-        readBlockParameters = dcm.getBlockParameters()
-        readCharacteristicLines = dcm.getCharacteristicLines()
-        readFixedCharacteristicLines = dcm.getFixedCharacteristicLines()
-        readGroupCharacteristicLines = dcm.getGroupCharacteristicLines()
-        readCharacteristicMaps = dcm.getCharacteristicMaps()
-        readFixedCharacteristicMaps = dcm.getFixedCharacteristicMaps()
-        readGroupCharacteristicMaps = dcm.getGroupCharacteristicMaps()
-        readDistributions = dcm.getDistributions()
+        readFunctions = dcm.get_functions()
+        readParameters = dcm.get_parameters()
+        readBlockParameters = dcm.get_block_parameters()
+        readCharacteristicLines = dcm.get_characteristic_lines()
+        readFixedCharacteristicLines = dcm.get_fixed_characteristic_lines()
+        readGroupCharacteristicLines = dcm.get_group_characteristic_lines()
+        readCharacteristicMaps = dcm.get_characteristic_maps()
+        readFixedCharacteristicMaps = dcm.get_fixed_characteristic_maps()
+        readGroupCharacteristicMaps = dcm.get_group_characteristic_maps()
+        readDistributions = dcm.get_distributions()
 
         print()
         print(f"Successfully parsed {filename}")
@@ -42,3 +45,5 @@ if __name__ == "__main__":
         print(f"Number of group characteristic maps:    {len(readGroupCharacteristicMaps)}")
         print(f"Number of distributions:                {len(readDistributions)}")
         print()
+
+    sys.exit()
