@@ -1,5 +1,13 @@
 # https://pre-commit.com/
-exclude: "tests/Sample.dcm" # Dont format at all as it contains typical errors that the parser has to handle.
+ci:
+    # The repos are quite stable and doesn't effectively change the code that
+    # often. So no need for the bot to update the rev that often.
+    autoupdate_schedule: quarterly
+
+# Dont format test dcm-files at all as they contain typical errors that the
+# parser has to handle.
+exclude: "tests/Sample.dcm"
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
