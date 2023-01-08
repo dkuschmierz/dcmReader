@@ -549,11 +549,11 @@ class DcmReader:
                 elif line.startswith("GRUPPENKENNFELD "):
                     re_match = re.search(r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
 
-                    found_group_characteristic_map = foundGroupCharacteristicMap = DcmGroupCharacteristicMap(
-                        reMatch.group(1)
+                    found_group_characteristic_map = DcmGroupCharacteristicMap(
+                        re_match.group(1)
                     )
-                    x_dimension = self.convert_value(reMatch.group(2))
-                    y_dimension = self.convert_value(reMatch.group(3))
+                    x_dimension = self.convert_value(re_match.group(2))
+                    y_dimension = self.convert_value(re_match.group(3))
                     
                     stx = []
                     sty = None
@@ -565,18 +565,16 @@ class DcmReader:
                         if line.startswith("END"):
                             if len(_values) != y_dimension:
                                 logger.error(
-                                    "Values dimension in %s \
-                                        does not match description!", found_group_characteristic_map.name
+                                    f"Values dimension in {found_group_characteristic_map.name} does not match description!"
                                 )
                             if len(stx) != x_dimension:
                                 logger.error(
-                                    "X dimension in %s do not match description!", found_group_characteristic_map.name
+                                    f"X dimension in {found_group_characteristic_map.name} do not match description!", 
                                 )
                             for name, entry in _values.items():
                                 if len(entry) != x_dimension:
                                     logger.error(
-                                        "Values dimension in %s \
-                                            does not match description!", found_group_characteristic_map.name
+                                        "Values dimension in {found_group_characteristic_map.name} does not match description!", 
                                     )
 
                             found_group_characteristic_map.values = list(_values.values())
