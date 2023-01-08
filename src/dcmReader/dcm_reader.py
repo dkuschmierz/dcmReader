@@ -408,8 +408,6 @@ class DcmReader:
                     found_characteristic_map.y_dimension = self.convert_value(re_match.group(3))
                     stx = []
                     sty = None
-                    stys = []
-                    _values = dict()
 
                     while True:
                         line = dcm_file.readline().strip()
