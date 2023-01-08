@@ -3,6 +3,7 @@ Definition of DCM fixed characteristic line
 """
 
 from dataclasses import dataclass
+
 from dcmReader.dcm_characteristic_line import DcmCharacteristicLine
 
 

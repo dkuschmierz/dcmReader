@@ -2,11 +2,11 @@ import os
 import sys
 import unittest
 
+from dcmReader.dcm_reader import DcmReader
+
 testdir = os.path.dirname(__file__)
 srcdir = "../src"
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
-
-from dcmReader.dcm_reader import DcmReader
 
 
 class TestWriteFile(unittest.TestCase):
@@ -196,9 +196,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual("fixedCharacteristicLine", characteristic.name)
         self.assertEqual("Sample fixed characteristic line", characteristic.description)
         self.assertEqual("FixedCharacteristicLineFunction", characteristic.function)
-        self.assertEqual(
-            "FixedCharacteristicLineDisplayname", characteristic.display_name
-        )
+        self.assertEqual("FixedCharacteristicLineDisplayname", characteristic.display_name)
         self.assertEqual("°", characteristic.unit_values)
         self.assertEqual("s", characteristic.unit_x)
         self.assertEqual(45.0, characteristic.values[0.0])
@@ -215,9 +213,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual("fixedCharacteristicLine", characteristicWritten.name)
         self.assertEqual("Sample fixed characteristic line", characteristicWritten.description)
         self.assertEqual("FixedCharacteristicLineFunction", characteristicWritten.function)
-        self.assertEqual(
-            "FixedCharacteristicLineDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("FixedCharacteristicLineDisplayname", characteristicWritten.display_name)
         self.assertEqual("°", characteristicWritten.unit_values)
         self.assertEqual("s", characteristicWritten.unit_x)
         self.assertEqual(45.0, characteristicWritten.values[0.0])
@@ -242,9 +238,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual("groupCharacteristicLine", characteristic.name)
         self.assertEqual("Sample group characteristic line", characteristic.description)
         self.assertEqual("GroupCharacteristicLineFunction", characteristic.function)
-        self.assertEqual(
-            "GroupCharacteristicLineDisplayname", characteristic.display_name
-        )
+        self.assertEqual("GroupCharacteristicLineDisplayname", characteristic.display_name)
         self.assertEqual("°", characteristic.unit_values)
         self.assertEqual("s", characteristic.unit_x)
         self.assertEqual(-45.0, characteristic.values[1.0])
@@ -258,9 +252,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual("groupCharacteristicLine", characteristicWritten.name)
         self.assertEqual("Sample group characteristic line", characteristicWritten.description)
         self.assertEqual("GroupCharacteristicLineFunction", characteristicWritten.function)
-        self.assertEqual(
-            "GroupCharacteristicLineDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("GroupCharacteristicLineDisplayname", characteristicWritten.display_name)
         self.assertEqual("°", characteristicWritten.unit_values)
         self.assertEqual("s", characteristicWritten.unit_x)
         self.assertEqual(-45.0, characteristicWritten.values[1.0])
@@ -342,9 +334,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual("fixedCharacteristicMap", characteristic.name)
         self.assertEqual("Sample fixed characteristic map", characteristic.description)
         self.assertEqual("FixedCharacteristicMapFunction", characteristic.function)
-        self.assertEqual(
-            "FixedCharacteristicMapDisplayname", characteristic.display_name
-        )
+        self.assertEqual("FixedCharacteristicMapDisplayname", characteristic.display_name)
         self.assertEqual("bar", characteristic.unit_values)
         self.assertEqual("°C", characteristic.unit_x)
         self.assertEqual("m/s", characteristic.unit_y)
@@ -369,9 +359,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual("fixedCharacteristicMap", characteristicWritten.name)
         self.assertEqual("Sample fixed characteristic map", characteristicWritten.description)
         self.assertEqual("FixedCharacteristicMapFunction", characteristicWritten.function)
-        self.assertEqual(
-            "FixedCharacteristicMapDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("FixedCharacteristicMapDisplayname", characteristicWritten.display_name)
         self.assertEqual("bar", characteristicWritten.unit_values)
         self.assertEqual("°C", characteristicWritten.unit_x)
         self.assertEqual("m/s", characteristicWritten.unit_y)
@@ -404,9 +392,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual("groupCharacteristicMap", characteristic.name)
         self.assertEqual("Sample group characteristic map", characteristic.description)
         self.assertEqual("GroupCharacteristicMapFunction", characteristic.function)
-        self.assertEqual(
-            "GroupCharacteristicMapDisplayname", characteristic.display_name
-        )
+        self.assertEqual("GroupCharacteristicMapDisplayname", characteristic.display_name)
         self.assertEqual("bar", characteristic.unit_values)
         self.assertEqual("°C", characteristic.unit_x)
         self.assertEqual("m/s", characteristic.unit_y)
@@ -437,9 +423,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual("groupCharacteristicMap", characteristicWritten.name)
         self.assertEqual("Sample group characteristic map", characteristicWritten.description)
         self.assertEqual("GroupCharacteristicMapFunction", characteristicWritten.function)
-        self.assertEqual(
-            "GroupCharacteristicMapDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("GroupCharacteristicMapDisplayname", characteristicWritten.display_name)
         self.assertEqual("bar", characteristicWritten.unit_values)
         self.assertEqual("°C", characteristicWritten.unit_x)
         self.assertEqual("m/s", characteristicWritten.unit_y)

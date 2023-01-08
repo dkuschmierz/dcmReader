@@ -2,6 +2,7 @@
 Definition of DCM fixed characteristic map
 """
 from dataclasses import dataclass
+
 from dcmReader.dcm_characteristic_map import DcmCharacteristicMap
 
 

@@ -2,6 +2,7 @@
 Definition of DCM group characteristic line
 """
 from dataclasses import dataclass
+
 from dcmReader.dcm_characteristic_line import DcmCharacteristicLine
 
 
