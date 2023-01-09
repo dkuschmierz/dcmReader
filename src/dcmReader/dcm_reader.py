@@ -576,7 +576,7 @@ class DcmReader:
                                     )
 
                             found_group_characteristic_map.values = list(_values.values())
-                            found_group_characteristic_map.coords = (stx, stys)
+                            found_group_characteristic_map.coords = (stys, stx)
                             break
                         elif line.startswith("LANGNAME"):
                             found_group_characteristic_map.attrs["description"] = self.parse_string(line)
