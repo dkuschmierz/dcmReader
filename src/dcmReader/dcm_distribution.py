@@ -1,11 +1,27 @@
 """
 Definition of DCM distribution
 """
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from dcmReader.utils import _DcmBase
+
+
+def _attrs_init() -> dict:
+    return {
+        "description": "",
+        "display_name": "",
+        "variants": {},
+        "function": "",
+        "units_x": "",
+        # "units": "",
+        "comment": "",
+    }
 
 
 @dataclass
-class DcmDistribution:
+class DcmDistribution(_DcmBase):
     """Definition of a distribution
 
     Attributes:
@@ -20,42 +36,4 @@ class DcmDistribution:
         comment (str):      Block comment
     """
 
-    def __init__(self, name) -> None:
-        self.name = name
-        self.values = []
-        self.description = None
-        self.display_name = None
-        self.variants = {}
-        self.function = None
-        self.unit_x = None
-        self.x_dimension = 0
-        self.comment = None
-
-    def __str__(self):
-        value = f"STUETZSTELLENVERTEILUNG {self.name} {str(self.x_dimension)}\n"
-
-        if self.comment:
-            for line in self.comment.splitlines(True):
-                value += f"* {line}"
-        if self.description:
-            value += f'  LANGNAME      "{self.description}"\n'
-        if self.function:
-            value += f'  FUNKTION      "{self.function}"\n'
-        if self.display_name:
-            value += f"  DISPLAYNAME   {self.display_name}\n"
-        if self.unit_x:
-            value += f'  EINHEIT_X     "{self.unit_x}"\n'
-        if self.values:
-            x_entries = ""
-            for x_entry in self.values:
-                x_entries += f"{str(x_entry)} "
-            value += f'  ST/X          {x_entries.strip()}\n'
-        for var_name, var_value in self.variants.items():
-            value += f"  VAR           {var_name}={var_value}\n"
-
-        value += "END"
-
-        return value
-
-    def __lt__(self, other):
-        return self.function < other.function and self.description < other.description
+    attrs: dict = field(default_factory=_attrs_init)

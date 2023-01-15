@@ -3,9 +3,24 @@ Definition of DCM characteristic map
 """
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 from dcmReader.utils import _DcmBase
 
 
+def _attrs_init() -> dict:
+    return {
+        "description": "",
+        "display_name": "",
+        "variants": {},
+        "function": "",
+        "units_x": "",
+        "units_y": "",
+        "units": "",
+    }
+
+
+@dataclass
 class DcmCharacteristicMap(_DcmBase):
     """Definition of a characteristic map
 
@@ -26,30 +41,4 @@ class DcmCharacteristicMap(_DcmBase):
         y_dimension (int):   Dimension in y direction of the characteristic maps
     """
 
-    def __init__(
-        self,
-        name: str,
-        values: list[list[float]] | None = None,
-        coords: tuple[list[float], ...] = None,
-        attrs: dict | None = None,
-        *,
-        block_type: str = "KENNFELD",
-    ) -> None:
-        if attrs is None:
-            attrs = {
-                "description": "",
-                "display_name": "",
-                "variants": {},
-                "function": "",
-                "units_x": "",
-                "units_y": "",
-                "units": "",
-            }
-
-        super().__init__(
-            name=name,
-            values=values,
-            coords=coords,
-            attrs=attrs,
-            block_type=block_type,
-        )
+    attrs: dict = field(default_factory=_attrs_init)

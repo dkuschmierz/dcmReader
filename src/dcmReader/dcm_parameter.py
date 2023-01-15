@@ -1,9 +1,25 @@
 """Definition of DCM parameter"""
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from dcmReader.utils import _DcmBase
+
+
+def _attrs_init() -> dict:
+    return {
+        "description": "",
+        "display_name": "",
+        "variants": {},
+        "function": "",
+        "units_x": "",
+        "units_y": "",
+        "units": "",
+    }
 
 
 @dataclass
-class DcmParameter:
+class DcmParameter(_DcmBase):
     """Definition of a parameter
 
     Attributes:
@@ -18,44 +34,4 @@ class DcmParameter:
         comment (str):      Block comment
     """
 
-    def __init__(self, name):
-        self.name = name
-        self.value = None
-        self.description = None
-        self.display_name = None
-        self.variants = {}
-        self.function = None
-        self.unit = None
-        self.text = None
-        self.comment = None
-
-    def __str__(self):
-        value = f"FESTWERT {self.name}\n"
-
-        if self.comment:
-            for line in self.comment.splitlines(True):
-                value += f"* {line}"
-        if self.description:
-            value += f'  LANGNAME      "{self.description}"\n'
-        if self.function:
-            value += f'  FUNKTION      "{self.function}"\n'
-        if self.display_name:
-            value += f"  DISPLAYNAME   {self.display_name}\n"
-        if self.unit:
-            value += f'  EINHEIT_W     "{self.unit}"\n'
-        if self.value:
-            value += f"  WERT          {self.value}\n"
-        if self.text:
-            value += f'  TEXT          "{self.text}"\n'
-
-        for var_name, var_value in self.variants.items():
-            if self.value:
-                value += f"  VAR           {var_name}={var_value}\n"
-            else:
-                value += f'  VAR           {var_name}="{var_value}"\n'
-        value += "END"
-
-        return value
-
-    def __lt__(self, other):
-        return self.function < other.function and self.description < other.description
+    attrs: dict = field(default_factory=_attrs_init)
