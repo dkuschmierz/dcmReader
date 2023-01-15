@@ -4,9 +4,18 @@ Definition of DCM characteristic map
 from __future__ import annotations
 
 import math
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+if TYPE_CHECKING:
+    try:
+        from numpy.typing import ArrayLike
+    except ImportError:
+        from typing import Union
+
+        ArrayLike = Union[float, list[float], list[list[float]]]
 
 
 def _get_shape(ndarray: list | float) -> tuple[int, ...]:
@@ -39,11 +48,11 @@ def _get_shape(ndarray: list | float) -> tuple[int, ...]:
         return ()
 
 
-class HasValuesProtocol(Protocol):
-    values: list[list[float]]
+class _HasValuesProtocol(Protocol):
+    values: ArrayLike
 
 
-class ShapeRelatedMixin(HasValuesProtocol):
+class ShapeRelatedMixin(_HasValuesProtocol):
     @property
     def shape(self) -> tuple[int, ...]:
         """
@@ -84,12 +93,26 @@ class ShapeRelatedMixin(HasValuesProtocol):
             raise TypeError("len() of unsized object")
 
 
+def _attrs_init() -> dict:
+    return {
+        "description": "",
+        "display_name": "",
+        "variants": {},
+        "text": "",
+        "function": "",
+        "units_x": "",
+        "units_y": "",
+        "units": "",
+    }
+
+
 @dataclass
 class _DcmBase(ShapeRelatedMixin):
     name: str
-    values: list[list[float]] = field(default_factory=list)
-    coords: tuple[list[float], ...] = field(default_factory=tuple)
-    attrs: dict = field(default_factory=dict)
+    values: ArrayLike = field(default_factory=list)
+    coords: tuple[ArrayLike, ...] = field(default_factory=tuple)
+    dims: tuple[str, ...] = field(default_factory=tuple)
+    attrs: dict = field(default_factory=_attrs_init)
     block_type: str = ""
 
     def __lt__(self, other):
@@ -144,22 +167,29 @@ class _DcmBase(ShapeRelatedMixin):
             ("EINHEIT_X", "units_x", lambda x: f'"{x}"'),
             ("EINHEIT_Y", "units_y", lambda x: f'"{x}"'),
             ("EINHEIT_W", "units", lambda x: f'"{x}"'),
+            ("*SSTX", "x_mapping", lambda x: f"{x}"),
+            ("*SSTY", "y_mapping", lambda x: f"{x}"),
+            # Printed after WERT:
+            ("TEXT", "text", lambda x: f"{x}"),
+            ("VAR", "variants", lambda x: f"{x}"),
         )
-        for k, v, f in ks:
+        idx_as_suffx = 2
+        for k, v, f in ks[:-idx_as_suffx]:
             if self.attrs.get(v, ""):
                 value += print_values(k, f"{f(self.attrs[v])}")
 
-        for i, val in enumerate(self.values):
-            if i == 0 and ndim > 0:
-                value += print_values("ST/X", coords_rev[0])
+        if ndim > 0:
+            value += print_values("ST/X", coords_rev[0])
 
+        for i, val in enumerate(self.values if ndim > 1 else [self.values]):
             if ndim > 1:
                 value += print_values("ST/Y", coords_rev[1][i])
 
             value += print_values("WERT", val)
 
-        for var_name, var_value in self.attrs["variants"].items():
-            value += print_values("VAR", f"{var_name}={var_value}")
+        for k, v, f in ks[-idx_as_suffx:]:
+            if self.attrs.get(v, ""):
+                value += print_values(k, f"{f(self.attrs[v])}")
 
         value += "END"
 
