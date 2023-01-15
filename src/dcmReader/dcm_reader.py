@@ -6,6 +6,8 @@ import os
 import re
 import logging
 
+from collections import defaultdict
+
 from dcmReader.dcm_parameter import DcmParameter
 from dcmReader.dcm_function import DcmFunction
 from dcmReader.dcm_parameter_block import DcmParameterBlock
@@ -19,6 +21,8 @@ from dcmReader.dcm_distribution import DcmDistribution
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+comment_qualifier = ("!", "*", ".")
 
 
 class DcmReader:
@@ -38,7 +42,43 @@ class DcmReader:
         self._group_characteristic_map_list = []
         self._distribution_list = []
 
-    def parse_variant(self, line):
+        self.parser_methods = {
+            "LANGNAME": {"key": "description", "method": self.parse_string},
+            "DISPLAYNAME": {"key": "display_name", "method": self.parse_string},
+            "FUNKTION": {"key": "function", "method": self.parse_string},
+            "WERT": {"key": "", "method": self.parse_wert},
+            "ST/X": {"key": "", "method": self.parse_coord_x},
+            "ST/Y": {"key": "", "method": self.parse_coord_y},
+            "EINHEIT_W": {"key": "units", "method": self.parse_string},
+            "EINHEIT_X": {"key": "units_x", "method": self.parse_string},
+            "EINHEIT_Y": {"key": "units_y", "method": self.parse_string},
+            "VAR": {"key": "variants", "method": self.parse_string},
+            "TEXT": {"key": "text", "method": self.parse_string},
+            "*SSTX": {"key": "x_mapping", "method": self.parse_string},
+            "*SSTY": {"key": "y_mapping", "method": self.parse_string},
+        }
+        self.parser_methods.update({k: {"key": "", "method": self.parse_comment} for k in comment_qualifier})
+
+    def parse_wert(self, line: str, *, coord_x, coord_y, values: defaultdict, **kwargs):
+        # if not (coord_x or coord_y):
+        #     raise ValueError(f"Values before stx/sty in {kwargs.get('name', 'Error')}")
+
+        sty = coord_y[-1] if len(coord_y) > 0 else None
+        values[sty].extend(self.parse_block_parameters(line))
+
+    def parse_coord_x(self, line: str, *, coord_x: list, **kwargs) -> None:
+        coord_x.extend(self.parse_block_parameters(line))
+
+    def parse_coord_y(self, line: str, *, coord_y: list, **kwargs) -> None:
+        self.parse_coord_x(line, coord_x=coord_y)
+
+    def parse_var(self, line: str, *, attrs: dict, key: str, **kwargs) -> None:
+        attrs[key].update(self.parse_variant(line))
+
+    def parse_comment(self, line: str, *, attrs: dict, **kwargs):
+        attrs["comment"] = attrs.get("comment", "") + line[1:].strip() + os.linesep
+
+    def parse_variant(self, line, **kwargs):
         """Parses a variant field
 
         Args:
@@ -57,7 +97,7 @@ class DcmReader:
         return {str(variant.group(1)).strip(): value}
 
     @staticmethod
-    def parse_string(line):
+    def parse_string(line, **kwargs):
         """Parses a text field
 
         Args:
@@ -66,9 +106,10 @@ class DcmReader:
         Returns:
             Parsed text field
         """
-        return line.split(" ", 1)[1].strip(' "')
+        return line.split(None, 1)[1].strip(' "')
+        # return line.split(" ", 1)[1].strip(' "')
 
-    def parse_block_parameters(self, line):
+    def parse_block_parameters(self, line, **kwargs):
         """Parses a block parameters line
 
         Args:
@@ -77,7 +118,7 @@ class DcmReader:
         Returns:
             Parsed block parameters as list
         """
-        parameters = line.split(" ", 1)[1]
+        parameters = line.split(None, 1)[1]
         parameters = " ".join(parameters.split()).split()
         return [self.convert_value(i) for i in parameters]
 
@@ -103,6 +144,87 @@ class DcmReader:
         except ValueError as err:
             raise ValueError(f"Cannot convert {value} from string to number.") from err
 
+    def parse_block_kennfeld(self, DcmThing, line_intro, dcm_file):
+        block_type, name, *shape = line_intro.split()
+        print(block_type, name)
+        dcm_thing = DcmThing(name=name, block_type=block_type)
+
+        # Reverse the order of x and y to match numpy:
+        shape.reverse()
+        shape = tuple(map(int, shape))
+        coord_y, coord_x = [], []
+
+        values: defaultdict[float, list] = defaultdict(list)
+        while True:
+            line = dcm_file.readline().strip()
+
+            # Get the first keyword:
+            keyword = line.split(None, 1)[0]
+
+            if keyword.startswith("END"):
+
+                if block_type == "STUETZSTELLENVERTEILUNG":
+                    values[None] = coord_x
+                    dcm_thing.attrs["x_mapping"] = dcm_thing.name
+
+                # Check if the parsing went ok:
+                if len(shape) > 0 and len(values) != shape[0]:
+                    logger.error(f"Values dimension in {dcm_thing.name} does not match description!")
+                if len(shape) > 0 and len(coord_x) != shape[-1]:
+                    logger.error(f"X dimension in {dcm_thing.name} do not match description!")
+                for name, entry in values.items():
+                    if len(shape) > 0 and len(entry) != shape[-1]:
+                        logger.error(f"Values dimension in {dcm_thing.name} does not match description!")
+
+                # Finalize the parsing:
+                dcm_thing.coords = tuple(v for _, v in enumerate((coord_y, coord_x)) if v)
+                dcm_thing.dims = tuple(
+                    dcm_thing.attrs[k] for k in ("y_mapping", "x_mapping") if dcm_thing.attrs.get(k, None)
+                )
+
+                values_list = list(values.values())
+
+                values_fin: float | list[float] | list[list[float]]
+                if len(values_list) == 1 and len(dcm_thing.coords) == 0:
+                    # single float
+                    # squeeze out the wrapping list:
+                    values_fin = values_list[0][0]
+                elif len(values) > 0 and len(dcm_thing.coords) == 1:
+                    values_fin = values_list[0]
+                elif len(values) > 0 and len(dcm_thing.coords) > 1:
+                    values_fin = values_list
+                else:
+                    values_fin = None
+                dcm_thing.values = values_fin
+
+                break
+
+            else:
+                # Get parser settings for this keyword:
+                p = self.parser_methods.get(keyword, None)
+
+                if p is not None:
+                    # Parse the line:
+                    parsed_values = p["method"](
+                        line,
+                        # Used in functions:
+                        coord_x=coord_x,
+                        coord_y=coord_y,
+                        values=values,
+                        attrs=dcm_thing.attrs,
+                        # Error handling:
+                        name=dcm_thing.name,
+                    )
+
+                    # Optionally store in attrs, otherwise assume it's
+                    # stored within the method:
+                    if p["key"]:
+                        dcm_thing.attrs[p["key"]] = parsed_values
+                else:
+                    logger.warning(f"Unknown parameter field: {line}")
+
+        return dcm_thing
+
     def write(self, file) -> None:
         """Writes the current DCM object to a dcm file
 
@@ -122,8 +244,6 @@ class DcmReader:
             file(str): DCM file to parse
         """
         _dcm_format = None
-
-        comment_qualifier = ("!", "*", ".")
 
         with open(file, "r", encoding="utf-8") as dcm_file:
             for line in dcm_file:
@@ -169,37 +289,39 @@ class DcmReader:
 
                 # Check if parameter starts
                 elif line.startswith("FESTWERT "):
-                    name = self.parse_string(line)
-                    found_parameter = DcmParameter(name)
-                    while True:
-                        line = dcm_file.readline().strip()
+                    self._parameter_list.append(self.parse_block_kennfeld(DcmParameter, line, dcm_file))
 
-                        if line.startswith("END"):
-                            break
+                    # name = self.parse_string(line)
+                    # found_parameter = DcmParameter(name)
+                    # while True:
+                    #     line = dcm_file.readline().strip()
 
-                        if line.startswith("LANGNAME"):
-                            found_parameter.description = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_parameter.display_name = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_parameter.function = self.parse_string(line)
-                        elif line.startswith("WERT"):
-                            found_parameter.value = self.convert_value(line.split(" ", 1)[1].strip())
-                        elif line.startswith("EINHEIT_W"):
-                            found_parameter.unit = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_parameter.variants.update(self.parse_variant(line))
-                        elif line.startswith("TEXT"):
-                            found_parameter.text = self.parse_string(line)
-                        elif line.startswith(comment_qualifier):
-                            if found_parameter.comment is None:
-                                found_parameter.comment = line[1:].strip() + os.linesep
-                            else:
-                                found_parameter.comment += line[1:].strip() + os.linesep
-                        else:
-                            logger.warning("Unknown parameter field: %s", line)
+                    #     if line.startswith("END"):
+                    #         break
 
-                    self._parameter_list.append(found_parameter)
+                    #     if line.startswith("LANGNAME"):
+                    #         found_parameter.description = self.parse_string(line)
+                    #     elif line.startswith("DISPLAYNAME"):
+                    #         found_parameter.display_name = self.parse_string(line)
+                    #     elif line.startswith("FUNKTION"):
+                    #         found_parameter.function = self.parse_string(line)
+                    #     elif line.startswith("WERT"):
+                    #         found_parameter.value = self.convert_value(line.split(" ", 1)[1].strip())
+                    #     elif line.startswith("EINHEIT_W"):
+                    #         found_parameter.unit = self.parse_string(line)
+                    #     elif line.startswith("VAR"):
+                    #         found_parameter.variants.update(self.parse_variant(line))
+                    #     elif line.startswith("TEXT"):
+                    #         found_parameter.text = self.parse_string(line)
+                    #     elif line.startswith(comment_qualifier):
+                    #         if found_parameter.comment is None:
+                    #             found_parameter.comment = line[1:].strip() + os.linesep
+                    #         else:
+                    #             found_parameter.comment += line[1:].strip() + os.linesep
+                    #     else:
+                    #         logger.warning("Unknown parameter field: %s", line)
+
+                    # self._parameter_list.append(found_parameter)
 
                 # Check if parameter block start
                 elif line.startswith("FESTWERTEBLOCK"):
@@ -253,16 +375,19 @@ class DcmReader:
                         line = dcm_file.readline().strip()
                         if line.startswith("END"):
                             if len(stx) != found_characteristic_line.x_dimension:
-                                logger.error("X dimension in %s \
-                                    do not match description!", found_characteristic_line.name)
+                                logger.error(
+                                    "X dimension in %s \
+                                    do not match description!",
+                                    found_characteristic_line.name,
+                                )
                             if len(parameters) != found_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_characteristic_line.name
+                                        do not match description!",
+                                    found_characteristic_line.name,
                                 )
                             found_characteristic_line.values = dict(zip(stx, parameters))
                             break
-
                         if line.startswith("LANGNAME"):
                             found_characteristic_line.description = self.parse_string(line)
                         elif line.startswith("DISPLAYNAME"):
@@ -311,7 +436,8 @@ class DcmReader:
                             if len(parameters) != found_fixed_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_fixed_characteristic_line.name
+                                        do not match description!",
+                                    found_fixed_characteristic_line.name,
                                 )
                             found_fixed_characteristic_line.values = dict(zip(stx, parameters))
                             break
@@ -360,12 +486,14 @@ class DcmReader:
                             if len(parameters) != found_group_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_group_characteristic_line.name
+                                        do not match description!",
+                                    found_group_characteristic_line.name,
                                 )
                             if len(stx) != found_group_characteristic_line.x_dimension:
                                 logger.error(
                                     "X dimension in %s \
-                                        do not match description!", found_group_characteristic_line.name
+                                        do not match description!",
+                                    found_group_characteristic_line.name,
                                 )
                             found_group_characteristic_line.values = dict(zip(stx, parameters))
                             break
@@ -402,262 +530,60 @@ class DcmReader:
 
                 # Check for characteristic map
                 elif line.startswith("KENNFELD "):
-                    re_match = re.search(r"KENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
-                    found_characteristic_map = DcmCharacteristicMap(re_match.group(1))
-                    found_characteristic_map.x_dimension = self.convert_value(re_match.group(2))
-                    found_characteristic_map.y_dimension = self.convert_value(re_match.group(3))
-                    stx = []
-                    sty = None
-
-                    while True:
-                        line = dcm_file.readline().strip()
-                        if line.startswith("END"):
-                            if len(found_characteristic_map.values) != found_characteristic_map.y_dimension:
-                                logger.error(
-                                    "Values dimension in %s \
-                                        does not match description!", found_characteristic_map.name
-                                )
-                            if len(stx) != found_characteristic_map.x_dimension:
-                                logger.error("X dimension in %s \
-                                    do not match description!", found_characteristic_map.name)
-                            for name, entry in found_characteristic_map.values.items():
-                                if len(entry) != found_characteristic_map.x_dimension:
-                                    logger.error(
-                                        "Values dimension in %s \
-                                            does not match description!", found_characteristic_map.name
-                                    )
-                                else:
-                                    found_characteristic_map.values[name] = dict(zip(stx, entry))
-                            break
-
-                        if line.startswith("LANGNAME"):
-                            found_characteristic_map.description = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_characteristic_map.display_name = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_characteristic_map.function = self.parse_string(line)
-                        elif line.startswith("WERT"):
-                            if stx is None or sty is None:
-                                raise ValueError(f"Values before stx/sty in {found_characteristic_map.name}")
-                            parameters = self.parse_block_parameters(line)
-                            if sty not in found_characteristic_map.values:
-                                found_characteristic_map.values[sty] = []
-                            found_characteristic_map.values[sty].extend(parameters)
-                        elif line.startswith("ST/X"):
-                            stx.extend(self.parse_block_parameters(line))
-                        elif line.startswith("ST/Y"):
-                            sty = self.convert_value(line.split(" ", 1)[1].strip())
-                        elif line.startswith("EINHEIT_W"):
-                            found_characteristic_map.unit_values = self.parse_string(line)
-                        elif line.startswith("EINHEIT_X"):
-                            found_characteristic_map.unit_x = self.parse_string(line)
-                        elif line.startswith("EINHEIT_Y"):
-                            found_characteristic_map.unit_y = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_characteristic_map.variants.update(self.parse_variant(line))
-                        elif line.startswith(comment_qualifier):
-                            re_match_x = re.search(r"SSTX\s+(.*)", line)
-                            re_match_y = re.search(r"SSTY\s+(.*)", line)
-                            if re_match_x:
-                                found_characteristic_map.x_mapping = re_match_x.group(1)
-                            elif re_match_y:
-                                found_characteristic_map.y_mapping = re_match_y.group(1)
-                            else:
-                                if found_characteristic_map.comment is None:
-                                    found_characteristic_map.comment = line[1:].strip() + os.linesep
-                                else:
-                                    found_characteristic_map.comment += line[1:].strip() + os.linesep
-                        else:
-                            logger.warning("Unknown parameter field: %s", line)
-
-                    self._characteristic_map_list.append(found_characteristic_map)
+                    self._characteristic_map_list.append(
+                        self.parse_block_kennfeld(DcmCharacteristicMap, line, dcm_file)
+                    )
 
                 # Check for fixed characteristic map
                 elif line.startswith("FESTKENNFELD "):
-                    re_match = re.search(r"FESTKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
-                    found_fixed_characteristic_map = DcmFixedCharacteristicMap(re_match.group(1))
-                    found_fixed_characteristic_map.x_dimension = self.convert_value(re_match.group(2))
-                    found_fixed_characteristic_map.y_dimension = self.convert_value(re_match.group(3))
-                    stx = []
-                    sty = None
-
-                    while True:
-                        line = dcm_file.readline().strip()
-                        if line.startswith("END"):
-                            if len(found_fixed_characteristic_map.values) != found_fixed_characteristic_map.y_dimension:
-                                logger.error(
-                                    "Values dimension in %s \
-                                        does not match description!", found_fixed_characteristic_map.name
-                                )
-                            if len(stx) != found_fixed_characteristic_map.x_dimension:
-                                logger.error(
-                                    "X dimension in %s do not match description!", found_fixed_characteristic_map.name
-                                )
-                            for name, entry in found_fixed_characteristic_map.values.items():
-                                if len(entry) != found_fixed_characteristic_map.x_dimension:
-                                    logger.error(
-                                        "Values dimension in %s \
-                                            does not match description!", found_fixed_characteristic_map.name
-                                    )
-                                else:
-                                    found_fixed_characteristic_map.values[name] = dict(zip(stx, entry))
-                            break
-
-                        if line.startswith("LANGNAME"):
-                            found_fixed_characteristic_map.description = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_fixed_characteristic_map.display_name = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_fixed_characteristic_map.function = self.parse_string(line)
-                        elif line.startswith("WERT"):
-                            if stx is None or sty is None:
-                                raise ValueError(f"Values before stx/sty in {found_fixed_characteristic_map.name}")
-                            parameters = self.parse_block_parameters(line)
-                            if sty not in found_fixed_characteristic_map.values:
-                                found_fixed_characteristic_map.values[sty] = []
-                            found_fixed_characteristic_map.values[sty].extend(parameters)
-                        elif line.startswith("ST/X"):
-                            stx.extend(self.parse_block_parameters(line))
-                        elif line.startswith("ST/Y"):
-                            sty = self.convert_value(line.split(" ", 1)[1].strip())
-                        elif line.startswith("EINHEIT_W"):
-                            found_fixed_characteristic_map.unit_values = self.parse_string(line)
-                        elif line.startswith("EINHEIT_X"):
-                            found_fixed_characteristic_map.unit_x = self.parse_string(line)
-                        elif line.startswith("EINHEIT_Y"):
-                            found_fixed_characteristic_map.unit_y = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_fixed_characteristic_map.variants.update(self.parse_variant(line))
-                        elif line.startswith(comment_qualifier):
-                            re_match_x = re.search(r"SSTX\s+(.*)", line)
-                            re_match_y = re.search(r"SSTY\s+(.*)", line)
-                            if re_match_x:
-                                found_fixed_characteristic_map.x_mapping = re_match_x.group(1)
-                            elif re_match_y:
-                                found_fixed_characteristic_map.y_mapping = re_match_y.group(1)
-                            else:
-                                if found_fixed_characteristic_map.comment is None:
-                                    found_fixed_characteristic_map.comment = line[1:].strip() + os.linesep
-                                else:
-                                    found_fixed_characteristic_map.comment += line[1:].strip() + os.linesep
-                        else:
-                            logger.warning("Unknown parameter field: %s", line)
-
-                    self._fixed_characteristic_map_list.append(found_fixed_characteristic_map)
+                    self._fixed_characteristic_map_list.append(
+                        self.parse_block_kennfeld(DcmFixedCharacteristicMap, line, dcm_file)
+                    )
 
                 # Check for group characteristic map
                 elif line.startswith("GRUPPENKENNFELD "):
-                    re_match = re.search(r"GRUPPENKENNFELD\s+(.*?)\s+(\d+)\s+(\d+)", line.strip())
-
-                    found_group_characteristic_map = DcmGroupCharacteristicMap(re_match.group(1))
-                    x_dimension = self.convert_value(re_match.group(2))
-                    y_dimension = self.convert_value(re_match.group(3))
-
-                    stx = []
-                    sty = None
-                    stys = []
-                    _values = dict()
-
-                    while True:
-                        line = dcm_file.readline().strip()
-                        if line.startswith("END"):
-                            if len(_values) != y_dimension:
-                                logger.error(
-                                    f"Values dimension in {found_group_characteristic_map.name} does not match description!"
-                                )
-                            if len(stx) != x_dimension:
-                                logger.error(
-                                    f"X dimension in {found_group_characteristic_map.name} do not match description!",
-                                )
-                            for name, entry in _values.items():
-                                if len(entry) != x_dimension:
-                                    logger.error(
-                                        "Values dimension in {found_group_characteristic_map.name} does not match description!",
-                                    )
-
-                            found_group_characteristic_map.values = list(_values.values())
-                            found_group_characteristic_map.coords = (stys, stx)
-                            break
-                        elif line.startswith("LANGNAME"):
-                            found_group_characteristic_map.attrs["description"] = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_group_characteristic_map.attrs["display_name"] = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_group_characteristic_map.attrs["function"] = self.parse_string(line)
-                        elif line.startswith("WERT"):
-                            if not (stx or stys):
-                                raise ValueError(f"Values before stx/sty in {found_group_characteristic_map.name}")
-                            parameters = self.parse_block_parameters(line)
-                            if sty not in _values.keys():
-                                _values[sty] = []
-                            _values[sty].extend(parameters)
-                        elif line.startswith("ST/X"):
-                            stx.extend(self.parse_block_parameters(line))
-                        elif line.startswith("ST/Y"):
-                            sty = self.convert_value(line.split(" ", 1)[1].strip())
-                            stys.append(sty)
-                        elif line.startswith("EINHEIT_W"):
-                            found_group_characteristic_map.attrs["units"] = self.parse_string(line)
-                        elif line.startswith("EINHEIT_X"):
-                            found_group_characteristic_map.attrs["units_x"] = self.parse_string(line)
-                        elif line.startswith("EINHEIT_Y"):
-                            found_group_characteristic_map.attrs["units_y"] = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_group_characteristic_map.attrs["variants"].update(self.parse_variant(line))
-                        elif line.startswith(comment_qualifier):
-                            re_match_x = re.search(r"SSTX\s+(.*)", line)
-                            re_match_y = re.search(r"SSTY\s+(.*)", line)
-                            if re_match_x:
-                                found_group_characteristic_map.attrs["x_mapping"] = re_match_x.group(1)
-                            elif re_match_y:
-                                found_group_characteristic_map.attrs["y_mapping"] = re_match_y.group(1)
-                            else:
-                                if found_group_characteristic_map.attrs["comment"] is None:
-                                    found_group_characteristic_map.attrs["comment"] = line[1:].strip() + os.linesep
-                                else:
-                                    found_group_characteristic_map.attrs["comment"] += line[1:].strip() + os.linesep
-                        else:
-                            if not line.startswith("*"):
-                                logger.warning(f"Unknown parameter field: {line}")
-
-                    self._group_characteristic_map_list.append(found_group_characteristic_map)
+                    self._group_characteristic_map_list.append(
+                        self.parse_block_kennfeld(DcmGroupCharacteristicMap, line, dcm_file)
+                    )
 
                 # Check if distribution
                 elif line.startswith("STUETZSTELLENVERTEILUNG"):
-                    re_match = re.search(r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line.strip())
-                    found_distribution = DcmDistribution(re_match.group(1))
-                    found_distribution.x_dimension = self.convert_value(re_match.group(2))
-                    parameters = None
-                    stx = None
+                    self._distribution_list.append(self.parse_block_kennfeld(DcmDistribution, line, dcm_file))
 
-                    while True:
-                        line = dcm_file.readline().strip()
-                        if line.startswith("END"):
-                            if len(found_distribution.values) != found_distribution.x_dimension:
-                                logger.error("X dimension in %s do not match description!", found_distribution.name)
-                            break
+                    # re_match = re.search(r"STUETZSTELLENVERTEILUNG\s+(.*?)\s+(\d+)", line.strip())
+                    # found_distribution = DcmDistribution(re_match.group(1))
+                    # found_distribution.x_dimension = self.convert_value(re_match.group(2))
+                    # parameters = None
+                    # stx = None
 
-                        if line.startswith("LANGNAME"):
-                            found_distribution.description = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_distribution.display_name = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_distribution.function = self.parse_string(line)
-                        elif line.startswith("ST/X"):
-                            found_distribution.values.extend(self.parse_block_parameters(line))
-                        elif line.startswith("EINHEIT_X"):
-                            found_distribution.unit_x = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_distribution.variants.update(self.parse_variant(line))
-                        elif line.startswith(comment_qualifier):
-                            if found_distribution.comment is None:
-                                found_distribution.comment = line[1:].strip() + os.linesep
-                            else:
-                                found_distribution.comment += line[1:].strip() + os.linesep
-                        else:
-                            logger.warning("Unknown parameter field: %s", line)
+                    # while True:
+                    #     line = dcm_file.readline().strip()
+                    #     if line.startswith("END"):
+                    #         if len(found_distribution.values) != found_distribution.x_dimension:
+                    #             logger.error("X dimension in %s do not match description!", found_distribution.name)
+                    #         break
 
-                    self._distribution_list.append(found_distribution)
+                    #     if line.startswith("LANGNAME"):
+                    #         found_distribution.description = self.parse_string(line)
+                    #     elif line.startswith("DISPLAYNAME"):
+                    #         found_distribution.display_name = self.parse_string(line)
+                    #     elif line.startswith("FUNKTION"):
+                    #         found_distribution.function = self.parse_string(line)
+                    #     elif line.startswith("ST/X"):
+                    #         found_distribution.values.extend(self.parse_block_parameters(line))
+                    #     elif line.startswith("EINHEIT_X"):
+                    #         found_distribution.unit_x = self.parse_string(line)
+                    #     elif line.startswith("VAR"):
+                    #         found_distribution.variants.update(self.parse_variant(line))
+                    #     elif line.startswith(comment_qualifier):
+                    #         if found_distribution.comment is None:
+                    #             found_distribution.comment = line[1:].strip() + os.linesep
+                    #         else:
+                    #             found_distribution.comment += line[1:].strip() + os.linesep
+                    #     else:
+                    #         logger.warning("Unknown parameter field: %s", line)
+
+                    # self._distribution_list.append(found_distribution)
 
                 # Unknown start of line
                 else:
