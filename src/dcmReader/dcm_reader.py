@@ -1,12 +1,14 @@
 """
 DCMReader which handles data parsing.
 """
+from __future__ import annotations
 
 import os
 import re
 import logging
 
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from dcmReader.dcm_parameter import DcmParameter
 from dcmReader.dcm_function import DcmFunction
@@ -18,6 +20,10 @@ from dcmReader.dcm_characteristic_map import DcmCharacteristicMap
 from dcmReader.dcm_fixed_characteristic_map import DcmFixedCharacteristicMap
 from dcmReader.dcm_group_characteristic_map import DcmGroupCharacteristicMap
 from dcmReader.dcm_distribution import DcmDistribution
+from dcmReader.utils import _get_shape
+
+if TYPE_CHECKING:
+    from dcmReader.utils import ArrayLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -46,37 +52,59 @@ class DcmReader:
             "LANGNAME": {"key": "description", "method": self.parse_string},
             "DISPLAYNAME": {"key": "display_name", "method": self.parse_string},
             "FUNKTION": {"key": "function", "method": self.parse_string},
-            "WERT": {"key": "", "method": self.parse_wert},
-            "ST/X": {"key": "", "method": self.parse_coord_x},
-            "ST/Y": {"key": "", "method": self.parse_coord_y},
+            "WERT": {"key": "", "method": self._parse_wert},
+            "ST/X": {"key": "", "method": self._parse_coord_x},
+            "ST/Y": {"key": "", "method": self._parse_coord_y},
             "EINHEIT_W": {"key": "units", "method": self.parse_string},
             "EINHEIT_X": {"key": "units_x", "method": self.parse_string},
             "EINHEIT_Y": {"key": "units_y", "method": self.parse_string},
             "VAR": {"key": "variants", "method": self.parse_string},
-            "TEXT": {"key": "text", "method": self.parse_string},
-            "*SSTX": {"key": "x_mapping", "method": self.parse_string},
-            "*SSTY": {"key": "y_mapping", "method": self.parse_string},
+            "TEXT": {"key": "", "method": self._parse_text},
+            # Data from comments:
+            "SSTX": {"key": "x_mapping", "method": self.parse_string},
+            "SSTY": {"key": "y_mapping", "method": self.parse_string},
         }
-        self.parser_methods.update({k: {"key": "", "method": self.parse_comment} for k in comment_qualifier})
+        self.parser_methods.update({k: {"key": "", "method": self._parse_comment} for k in comment_qualifier})
 
-    def parse_wert(self, line: str, *, coord_x, coord_y, values: defaultdict, **kwargs):
+    def _parse_wert(self, line: str, *, coord_x, coord_y, values: defaultdict, **kwargs):
         # if not (coord_x or coord_y):
         #     raise ValueError(f"Values before stx/sty in {kwargs.get('name', 'Error')}")
 
         sty = coord_y[-1] if len(coord_y) > 0 else None
         values[sty].extend(self.parse_block_parameters(line))
 
-    def parse_coord_x(self, line: str, *, coord_x: list, **kwargs) -> None:
+    def _parse_text(self, line: str, *, coord_x, coord_y, values: defaultdict, **kwargs):
+        sty = coord_y[-1] if len(coord_y) > 0 else None
+
+        parameters = line.split(None, 1)[1]
+        # parameters = " ".join(parameters.split()).split()
+        parameters = [s.strip("\"'") for s in parameters.split()]
+        values[sty].extend(parameters)
+
+    def _parse_coord_x(self, line: str, *, coord_x: list, **kwargs) -> None:
         coord_x.extend(self.parse_block_parameters(line))
 
-    def parse_coord_y(self, line: str, *, coord_y: list, **kwargs) -> None:
-        self.parse_coord_x(line, coord_x=coord_y)
+    def _parse_coord_y(self, line: str, *, coord_y: list, **kwargs) -> None:
+        self._parse_coord_x(line, coord_x=coord_y)
 
-    def parse_var(self, line: str, *, attrs: dict, key: str, **kwargs) -> None:
-        attrs[key].update(self.parse_variant(line))
+    def _parse_comment(self, line: str, *, attrs: dict, **kwargs):
+        # TODO: Should the comment remember which row? So it can be reprinted there?
 
-    def parse_comment(self, line: str, *, attrs: dict, **kwargs):
-        attrs["comment"] = attrs.get("comment", "") + line[1:].strip() + os.linesep
+        cq, line_no_cq = line[0], line[1:].strip()
+        k = line_no_cq.split(None, 1)[0]
+
+        p = self.parser_methods.get(k, None)
+        if p is not None:
+            # The comment has known keyword, parse it accordingly:
+            parsed_values = p["method"](line_no_cq, attrs=attrs, **kwargs)
+
+            # Optionally store in attrs, otherwise assume it's
+            # stored within the method:
+            if p["key"]:
+                attrs[p["key"]] = parsed_values
+        else:
+            cmnt_prev = attrs.get("comment", "")
+            attrs["comment"] = f"{cmnt_prev}{line_no_cq}{os.linesep}"
 
     def parse_variant(self, line, **kwargs):
         """Parses a variant field
@@ -145,13 +173,13 @@ class DcmReader:
             raise ValueError(f"Cannot convert {value} from string to number.") from err
 
     def parse_block_kennfeld(self, DcmThing, line_intro, dcm_file):
-        block_type, name, *shape = line_intro.split()
-        print(block_type, name)
+        block_type, name, *shape_rev = line_intro.split()
+        # print(block_type, name)
         dcm_thing = DcmThing(name=name, block_type=block_type)
 
         # Reverse the order of x and y to match numpy:
-        shape.reverse()
-        shape = tuple(map(int, shape))
+        shape_rev.reverse()
+        shape: tuple[int, ...] = tuple(int(v) for v in shape_rev if v != "@")
         coord_y, coord_x = [], []
 
         values: defaultdict[float, list] = defaultdict(list)
@@ -167,41 +195,54 @@ class DcmReader:
                     values[None] = coord_x
                     dcm_thing.attrs["x_mapping"] = dcm_thing.name
 
-                # Check if the parsing went ok:
-                if len(shape) > 0 and len(values) != shape[0]:
-                    logger.error(f"Values dimension in {dcm_thing.name} does not match description!")
-                if len(shape) > 0 and len(coord_x) != shape[-1]:
-                    logger.error(f"X dimension in {dcm_thing.name} do not match description!")
-                for name, entry in values.items():
-                    if len(shape) > 0 and len(entry) != shape[-1]:
-                        logger.error(f"Values dimension in {dcm_thing.name} does not match description!")
+                # Handle coords and dims:
+                xy = ("x", "y")
+                k_axis = tuple(f"{v}_mapping" for v in xy)
+                crds_rev = (coord_x, coord_y)
+                dims_rev = []
+                coords_rev = []
+                for i, v in enumerate(reversed(shape)):
+                    dims_rev.append(dcm_thing.attrs.get(k_axis[i], f"{dcm_thing.name}_{xy[i]}"))
+                    if crds_rev[i]:
+                        coords_rev.append(crds_rev[i])
+                dcm_thing.dims = tuple(reversed(dims_rev))
+                dcm_thing.coords = tuple(reversed(coords_rev))
 
-                # Finalize the parsing:
-                dcm_thing.coords = tuple(v for _, v in enumerate((coord_y, coord_x)) if v)
-                dcm_thing.dims = tuple(
-                    dcm_thing.attrs[k] for k in ("y_mapping", "x_mapping") if dcm_thing.attrs.get(k, None)
-                )
-
+                # Handle values:
                 values_list = list(values.values())
-
-                values_fin: float | list[float] | list[list[float]]
-                if len(values_list) == 1 and len(dcm_thing.coords) == 0:
-                    # single float
+                values_fin: ArrayLike
+                if len(values_list) == 1 and len(shape) == 0:
+                    # constant single float
                     # squeeze out the wrapping list:
                     values_fin = values_list[0][0]
-                elif len(values) > 0 and len(dcm_thing.coords) == 1:
+                elif len(values) > 0 and len(shape) == 1:
+                    # Tables:
                     values_fin = values_list[0]
-                elif len(values) > 0 and len(dcm_thing.coords) > 1:
+                elif len(values) > 0 and len(shape) > 1:
+                    # Maps:
                     values_fin = values_list
                 else:
+                    # Error?
                     values_fin = None
                 dcm_thing.values = values_fin
+
+                # Check if the parsing went ok:
+                value_shape = _get_shape(dcm_thing.values)
+                if value_shape != shape:
+                    logger.error(
+                        f"The parsed shape, {value_shape}, does not match the "
+                        f"expected shape, {shape}, from the '{block_type} {name}'-block"
+                    )
 
                 break
 
             else:
                 # Get parser settings for this keyword:
                 p = self.parser_methods.get(keyword, None)
+
+                if p is None:
+                    # Is it a comment?
+                    p = self.parser_methods.get(keyword[0], None)
 
                 if p is not None:
                     # Parse the line:
@@ -221,7 +262,7 @@ class DcmReader:
                     if p["key"]:
                         dcm_thing.attrs[p["key"]] = parsed_values
                 else:
-                    logger.warning(f"Unknown parameter field: {line}")
+                    logger.warning(f"JW: Unknown parameter field: {line=}{keyword=}")
 
         return dcm_thing
 
@@ -325,43 +366,45 @@ class DcmReader:
 
                 # Check if parameter block start
                 elif line.startswith("FESTWERTEBLOCK"):
-                    block_data = re.search(r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?", line.strip())
-                    found_block_parameter = DcmParameterBlock(block_data.group(1))
-                    found_block_parameter.x_dimension = self.convert_value(block_data.group(2))
-                    found_block_parameter.y_dimension = (
-                        self.convert_value(block_data.group(3)) if block_data.group(3) is not None else 1
-                    )
-                    while True:
-                        line = dcm_file.readline().strip()
-                        if line.startswith("END"):
-                            if len(found_block_parameter.values) != found_block_parameter.y_dimension:
-                                logger.error("Y dimension in %s do not match description!", found_block_parameter.name)
-                            break
+                    self._block_parameter_list.append(self.parse_block_kennfeld(DcmParameter, line, dcm_file))
 
-                        if line.startswith("LANGNAME"):
-                            found_block_parameter.description = self.parse_string(line)
-                        elif line.startswith("DISPLAYNAME"):
-                            found_block_parameter.display_name = self.parse_string(line)
-                        elif line.startswith("FUNKTION"):
-                            found_block_parameter.function = self.parse_string(line)
-                        elif line.startswith("WERT"):
-                            parameters = self.parse_block_parameters(line)
-                            if len(parameters) != found_block_parameter.x_dimension:
-                                logger.error("X dimension in %s do not match description!", found_block_parameter.name)
-                            found_block_parameter.values.append(parameters)
-                        elif line.startswith("EINHEIT_W"):
-                            found_block_parameter.unit = self.parse_string(line)
-                        elif line.startswith("VAR"):
-                            found_block_parameter.variants.update(self.parse_variant(line))
-                        elif line.startswith(comment_qualifier):
-                            if found_block_parameter.comment is None:
-                                found_block_parameter.comment = line[1:].strip() + os.linesep
-                            else:
-                                found_block_parameter.comment += line[1:].strip() + os.linesep
-                        else:
-                            logger.warning("Unknown parameter field: %s", line)
+                    # block_data = re.search(r"FESTWERTEBLOCK\s+(.*?)\s+(\d+)(?:\s+\@\s+(\d+))?", line.strip())
+                    # found_block_parameter = DcmParameterBlock(block_data.group(1))
+                    # found_block_parameter.x_dimension = self.convert_value(block_data.group(2))
+                    # found_block_parameter.y_dimension = (
+                    #     self.convert_value(block_data.group(3)) if block_data.group(3) is not None else 1
+                    # )
+                    # while True:
+                    #     line = dcm_file.readline().strip()
+                    #     if line.startswith("END"):
+                    #         if len(found_block_parameter.values) != found_block_parameter.y_dimension:
+                    #             logger.error("Y dimension in %s do not match description!", found_block_parameter.name)
+                    #         break
 
-                    self._block_parameter_list.append(found_block_parameter)
+                    #     if line.startswith("LANGNAME"):
+                    #         found_block_parameter.description = self.parse_string(line)
+                    #     elif line.startswith("DISPLAYNAME"):
+                    #         found_block_parameter.display_name = self.parse_string(line)
+                    #     elif line.startswith("FUNKTION"):
+                    #         found_block_parameter.function = self.parse_string(line)
+                    #     elif line.startswith("WERT"):
+                    #         parameters = self.parse_block_parameters(line)
+                    #         if len(parameters) != found_block_parameter.x_dimension:
+                    #             logger.error("X dimension in %s do not match description!", found_block_parameter.name)
+                    #         found_block_parameter.values.append(parameters)
+                    #     elif line.startswith("EINHEIT_W"):
+                    #         found_block_parameter.unit = self.parse_string(line)
+                    #     elif line.startswith("VAR"):
+                    #         found_block_parameter.variants.update(self.parse_variant(line))
+                    #     elif line.startswith(comment_qualifier):
+                    #         if found_block_parameter.comment is None:
+                    #             found_block_parameter.comment = line[1:].strip() + os.linesep
+                    #         else:
+                    #             found_block_parameter.comment += line[1:].strip() + os.linesep
+                    #     else:
+                    #         logger.warning("Unknown parameter field: %s", line)
+
+                    # self._block_parameter_list.append(found_block_parameter)
 
                 # Check if characteristic line
                 elif line.startswith("KENNLINIE"):

@@ -36,6 +36,15 @@ FESTWERT textParameter
   VAR           VariantA="ParameterB"
 END
 
+FESTWERTEBLOCK blockTextParameter1D 2
+* Sample comment
+  LANGNAME      "Sample block parameters"
+  FUNKTION      "BlockParameterFunction"
+  DISPLAYNAME   BlockParameterDisplayname
+  EINHEIT_W     "°C"
+  TEXT          "ParameterA" "ParameterB"
+END
+
 FESTWERTEBLOCK blockParameter1D 4
 * Sample comment
   LANGNAME      "Sample block parameters"
@@ -61,7 +70,7 @@ KENNLINIE characteristicLine 8
   DISPLAYNAME   CharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
-*SSTX DISTRIBUTION X
+*SSTX DISTRIBUTION X8
   ST/X          0.0 1.0 2.0 3.0
   ST/X          4.0 5.0 6.0 7.0
   WERT          0.0 80.0 120.0 180.0
@@ -75,9 +84,9 @@ FESTKENNLINIE fixedCharacteristicLine 6
   DISPLAYNAME   FixedCharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
-  *SSTX DISTRIBUTION X
+  *SSTX DISTRIBUTION X6
   ST/X          0.0 1.0 2.0
-  ST/X          3.0 4.0 5.0 
+  ST/X          3.0 4.0 5.0
   WERT          45.0 90.0 135.0
   WERT          180.0 225.0 270.0
 END
@@ -89,7 +98,7 @@ GRUPPENKENNLINIE groupCharacteristicLine 3
   DISPLAYNAME   GroupCharacteristicLineDisplayname
   EINHEIT_X     "s"
   EINHEIT_W     "°"
-* SSTX DISTRIBUTION X  
+* SSTX DISTRIBUTION X3
   ST/X          1.0 2.0 3.0
   WERT          -45.0 -90.0 -135.0
 END
@@ -102,15 +111,15 @@ KENNFELD characteristicMap 6 2
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
-*SSTX DISTRIBUTION X
-*SSTY DISTRIBUTION Y
+*SSTX DISTRIBUTION X6
+*SSTY DISTRIBUTION Y2
   ST/X          1.0 2.0 3.0 4.0 5.0 6.0
-  ST/Y          1.0 
+  ST/Y          1.0
   WERT          0.0 0.4 0.8 1.0 1.4 1.8
-  ST/Y          2.0 
+  ST/Y          2.0
   WERT          1.0 2.0 3.0 2.0 3.0 4.0
 END
-  
+
 FESTKENNFELD fixedCharacteristicMap 6 2
 * Sample comment
   LANGNAME      "Sample fixed characteristic map"
@@ -119,14 +128,14 @@ FESTKENNFELD fixedCharacteristicMap 6 2
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
-  *SSTX DISTRIBUTION X
-  *SSTY DISTRIBUTION Y
+  *SSTX DISTRIBUTION X6
+  *SSTY DISTRIBUTION Y2
   ST/X          1.0 2.0 3.0
   ST/X          4.0 5.0 6.0
-  ST/Y          0.0 
+  ST/Y          0.0
   WERT          0.0 0.4 0.8
   WERT          1.0 1.4 1.8
-  ST/Y          1.0 
+  ST/Y          1.0
   WERT          1.0 2.0 3.0 2.0 3.0 4.0
 END
 
@@ -138,22 +147,22 @@ GRUPPENKENNFELD groupCharacteristicMap 6 3
   EINHEIT_X     "°C"
   EINHEIT_Y     "m/s"
   EINHEIT_W     "bar"
-* SSTX DISTRIBUTION X
-* SSTY DISTRIBUTION Y
-  ST/X          1.0 2.0 3.0 
+* SSTX DISTRIBUTION X6
+* SSTY DISTRIBUTION Y3
+  ST/X          1.0 2.0 3.0
   ST/X          4.0 5.0 6.0
-  ST/Y          1.0 
-  WERT          1.0 2.0 3.0 
-  WERT          2.0 3.0 4.0 
-  ST/Y          2.0 
-  WERT          2.0 4.0 6.0 
-  WERT          3.0 4.0 5.0 
-  ST/Y          3.0 
+  ST/Y          1.0
+  WERT          1.0 2.0 3.0
+  WERT          2.0 3.0 4.0
+  ST/Y          2.0
+  WERT          2.0 4.0 6.0
+  WERT          3.0 4.0 5.0
+  ST/Y          3.0
   WERT          3.0 6.0 9.0
   WERT          7.0 8.0 9.0
 END
 
-STUETZSTELLENVERTEILUNG distrib 3 
+STUETZSTELLENVERTEILUNG distrib 3
 *SST
   LANGNAME      "Sample distribution"
   FUNKTION      "DistributionFunction"

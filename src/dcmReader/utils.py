@@ -4,23 +4,21 @@ Definition of DCM characteristic map
 from __future__ import annotations
 
 import math
+import os
 from typing import TYPE_CHECKING, Protocol
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    try:
-        from numpy.typing import ArrayLike
-    except ImportError:
-        from typing import Union
+    from typing import Union
 
-        ArrayLike = Union[float, list[float], list[list[float]]]
+    ArrayLike = float | str | list[float | str] | list[list[float | str]]
 
 
-def _get_shape(ndarray: list | float) -> tuple[int, ...]:
+def _get_shape(array_like: ArrayLike, *, check_if_ragged: bool = False) -> tuple[int, ...]:
     """
-    Get the shape of array-like.
+    Get the shape of array_like.
 
     Examples
     --------
@@ -34,15 +32,36 @@ def _get_shape(ndarray: list | float) -> tuple[int, ...]:
     (1, 1)
     >>> _get_shape([[1], [2]])
     (2, 1)
+
+    Calculating the shape from a ragged sequence does not work. It's possible to check
+    for these inconsistencies although at a cost of performance:
+
+    >>> try:
+    >>>     _get_shape([[0, 1, 2], [4, 5]], check_if_ragged=True)
+    >>> except ValueError as e:
+    >>>     msg = str(e)
+    >>>     print(f"{msg[:48]} (...) {msg[-17:]}")
+    >>> _get_shape([[0, 1, 2], [4, 5]], check_if_ragged=True)
+    Calculating a shape from ragged nested sequences (...) is not supported.
     """
     # https://stackoverflow.com/questions/51960857/how-can-i-get-a-list-shape-without-using-numpy
-    if isinstance(ndarray, list):
+    if isinstance(array_like, list):
         # More dimensions, so make a recursive call
-        outermost_size = len(ndarray)
+        outermost_size = len(array_like)
         if outermost_size == 0:
             return (outermost_size,)
         else:
-            return (outermost_size, *_get_shape(ndarray[0]))
+            if check_if_ragged:
+                # This costs some
+                it = iter(array_like)
+                the_len = len(next(it))
+                if not all(len(l) == the_len for l in it):
+                    raise ValueError(
+                        "Calculating a shape from ragged nested sequences "
+                        "(which is a list-or-tuple of lists-or-tuples "
+                        "with different lengths or shapes) is not supported."
+                    )
+            return (outermost_size, *_get_shape(array_like[0]))
     else:
         # No more dimensions, so we're done
         return ()
@@ -93,6 +112,27 @@ class ShapeRelatedMixin(_HasValuesProtocol):
             raise TypeError("len() of unsized object")
 
 
+def _to_str(val: str | int | float | list, delimiter: str = " ") -> str:
+    val_list: list = [val] if isinstance(val, (str, int, float)) else val
+    return delimiter.join(map(str, val_list))
+
+
+def _print_values(key: str, value: str | int | float | list, n: int = 6, pad: int = 14) -> str:
+    """Print pairwise values prettily."""
+    # Normalize so that value is always a list:
+    value_list: list = [value] if isinstance(value, (str, int, float)) else value
+
+    # Split too long lists into chunks.
+    value_list_chunked = [value_list[i : i + n] for i in range(0, len(value_list), n)]
+
+    # Return the key and value in a table-format:
+    pad_ = f"<{pad}"
+    out = ""
+    for v in value_list_chunked:
+        out += f"  {key:{pad_}}{_to_str(v)}\n"
+    return out
+
+
 def _attrs_init() -> dict:
     return {
         "description": "",
@@ -116,85 +156,71 @@ class _DcmBase(ShapeRelatedMixin):
     block_type: str = ""
 
     def __lt__(self, other):
-        return (
-            self.attrs["function"] < other.attrs["function"] and self.attrs["description"] < other.attrs["description"]
-        )
+        self_function = self.attrs.get("function", None)
+        self_description = self.attrs.get("descrition", None)
+        other_function = other.attrs.get("function", None)
+        other_description = other.attrs.get("descrition", None)
+        return self_function < other_function and self_description < other_description
 
-    def _print_dcm_format(self, name: str, is_function: False) -> str:
+    def _print_dcm_format(self) -> str:
         """
         Print the data according to the dcm-format.
-
-        Arrays longer than 6 are split to new line.
-
-        Parameters
-        ----------
-        name : str
-            Name of the block.
-        is_function : False
-            Is the block a 'FUNKTIONEN'.
         """
 
-        def to_str(val: str | int | float | list, delimiter: str = " ") -> str:
-            val_list: list = [val] if isinstance(val, (str, int, float)) else val
-            return delimiter.join(map(str, val_list))
+        if self.block_type == "FUNKTIONEN":
+            return f'{self.block_type} {self.name} "{self.version}" "{self.description}"'
 
-        def print_values(key: str, value: str | int | float | list, n: int = 6) -> str:
-            """Print pairwise values prettily."""
-            # Normalize so that val is always a list:
-            value_list: list = [value] if isinstance(value, (str, int, float)) else value
-
-            # Split too long lists into chunks.
-            value_list_chunked = [value_list[i : i + n] for i in range(0, len(value_list), n)]
-
-            out = ""
-            for v in value_list_chunked:
-                out += f"  {key: <13} {to_str(v)}\n"
-            return out
-
-        if is_function:
-            return f'{name} {self.name} "{self.version}" "{self.description}"'
-
-        shape_rev = list(reversed(self.shape))
-        coords_rev = list(reversed(self.coords))
         ndim = self.ndim
+        shape_rev: list[int | str] = list(reversed(self.shape))
+        if self.block_type == "FESTWERTEBLOCK" and ndim == 2:
+            shape_rev.insert(1, "@")
+        coords_rev = list(reversed(self.coords))
 
-        value = f"{name} {self.name} {to_str(shape_rev)}\n"
+        # Header:
+        value = f"{self.block_type} {self.name} {_to_str(shape_rev)}\n"
 
+        # Attributes printed before the values:
         ks = (
-            ("LANGNAME", "description", lambda x: f'"{x}"'),
-            ("FUNKTION", "function", lambda x: f"{x}"),
-            ("DISPLAYNAME", "display_name", lambda x: f'"{x}"'),
-            ("EINHEIT_X", "units_x", lambda x: f'"{x}"'),
-            ("EINHEIT_Y", "units_y", lambda x: f'"{x}"'),
-            ("EINHEIT_W", "units", lambda x: f'"{x}"'),
-            ("*SSTX", "x_mapping", lambda x: f"{x}"),
-            ("*SSTY", "y_mapping", lambda x: f"{x}"),
+            # TODO: Should comments be reprinted? They have currently lost the position
+            # so the comment might be out of context.
+            # ("*", "comment", lambda x: f"{', '.join(x.split(os.linesep))}", {"pad": 0, "n": 1}),
+            ("LANGNAME", "description", lambda x: f'"{x}"', {}),
+            ("FUNKTION", "function", lambda x: f"{x}", {}),
+            ("DISPLAYNAME", "display_name", lambda x: f'"{x}"', {}),
+            ("EINHEIT_X", "units_x", lambda x: f'"{x}"', {}),
+            ("EINHEIT_Y", "units_y", lambda x: f'"{x}"', {}),
+            ("EINHEIT_W", "units", lambda x: f'"{x}"', {}),
+            ("*SSTX", "x_mapping", lambda x: f"{x}", {}),
+            ("*SSTY", "y_mapping", lambda x: f"{x}", {}),
             # Printed after WERT:
-            ("TEXT", "text", lambda x: f"{x}"),
-            ("VAR", "variants", lambda x: f"{x}"),
+            ("TEXT", "text", lambda x: f"{x}", {}),  # Is this equivalent to WERT?
+            ("VAR", "variants", lambda x: f"{x}", {}),
         )
         idx_as_suffx = 2
-        for k, v, f in ks[:-idx_as_suffx]:
+        for k, v, f, kws in ks[:-idx_as_suffx]:
             if self.attrs.get(v, ""):
-                value += print_values(k, f"{f(self.attrs[v])}")
+                value += _print_values(k, f"{f(self.attrs[v])}", **kws)
 
+        # x-values:
         if ndim > 0:
-            value += print_values("ST/X", coords_rev[0])
+            value += _print_values("ST/X", coords_rev[0])
 
+        # y-value and values:
         for i, val in enumerate(self.values if ndim > 1 else [self.values]):
             if ndim > 1:
-                value += print_values("ST/Y", coords_rev[1][i])
+                value += _print_values("ST/Y", coords_rev[1][i])
 
-            value += print_values("WERT", val)
+            value += _print_values("WERT", val)
 
-        for k, v, f in ks[-idx_as_suffx:]:
+        # Attributes printed after the values:
+        for k, v, f, kws in ks[-idx_as_suffx:]:
             if self.attrs.get(v, ""):
-                value += print_values(k, f"{f(self.attrs[v])}")
+                value += _print_values(k, f"{f(self.attrs[v])}", **kws)
 
+        # Close:
         value += "END"
 
         return value
 
     def __str__(self) -> str:
-        is_function = self.block_type == "FUNKTIONEN"
-        return self._print_dcm_format(self.block_type, is_function)
+        return self._print_dcm_format()
