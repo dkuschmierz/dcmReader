@@ -64,9 +64,9 @@ class DcmCharacteristicMap:
         if self.unit_values:
             value += f'  EINHEIT_W     "{self.unit_values}"\n'
         if self.x_mapping:
-            value += f'*SSTX   {self.x_mapping}\n'
+            value += f"*SSTX   {self.x_mapping}\n"
         if self.y_mapping:
-            value += f'*SSTY   {self.y_mapping}\n'
+            value += f"*SSTY   {self.y_mapping}\n"
         stx_written = False
         for y_entry, map_values in self.values.items():
             x_entries = ""
@@ -75,10 +75,10 @@ class DcmCharacteristicMap:
                 x_entries += f"{str(x_entry)} "
                 value_entries += f"{str(value_entry)} "
             if not stx_written:
-                value += f'  ST/X          {x_entries.strip()}\n'
+                value += f"  ST/X          {x_entries.strip()}\n"
                 stx_written = True
-            value += f'  ST/Y          {str(y_entry).strip()}\n'
-            value += f'  WERT          {value_entries.strip()}\n'
+            value += f"  ST/Y          {str(y_entry).strip()}\n"
+            value += f"  WERT          {value_entries.strip()}\n"
         for var_name, var_value in self.variants.items():
             value += f"  VAR           {var_name}={var_value}\n"
 

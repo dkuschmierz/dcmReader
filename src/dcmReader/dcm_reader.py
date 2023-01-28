@@ -2,20 +2,20 @@
 DCMReader which handles data parsing.
 """
 
+import logging
 import os
 import re
-import logging
 
-from dcmReader.dcm_parameter import DcmParameter
-from dcmReader.dcm_function import DcmFunction
-from dcmReader.dcm_parameter_block import DcmParameterBlock
 from dcmReader.dcm_characteristic_line import DcmCharacteristicLine
-from dcmReader.dcm_fixed_characteristic_line import DcmFixedCharacteristicLine
-from dcmReader.dcm_group_characteristic_line import DcmGroupCharacteristicLine
 from dcmReader.dcm_characteristic_map import DcmCharacteristicMap
-from dcmReader.dcm_fixed_characteristic_map import DcmFixedCharacteristicMap
-from dcmReader.dcm_group_characteristic_map import DcmGroupCharacteristicMap
 from dcmReader.dcm_distribution import DcmDistribution
+from dcmReader.dcm_fixed_characteristic_line import DcmFixedCharacteristicLine
+from dcmReader.dcm_fixed_characteristic_map import DcmFixedCharacteristicMap
+from dcmReader.dcm_function import DcmFunction
+from dcmReader.dcm_group_characteristic_line import DcmGroupCharacteristicLine
+from dcmReader.dcm_group_characteristic_map import DcmGroupCharacteristicMap
+from dcmReader.dcm_parameter import DcmParameter
+from dcmReader.dcm_parameter_block import DcmParameterBlock
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class DcmReader:
 
         comment_qualifier = ("!", "*", ".")
 
-        with open(file, "r", encoding="utf-8") as dcm_file:
+        with open(file, encoding="utf-8") as dcm_file:
             for line in dcm_file:
                 # Remove whitespaces
                 line = line.strip()
@@ -253,12 +253,16 @@ class DcmReader:
                         line = dcm_file.readline().strip()
                         if line.startswith("END"):
                             if len(stx) != found_characteristic_line.x_dimension:
-                                logger.error("X dimension in %s \
-                                    do not match description!", found_characteristic_line.name)
+                                logger.error(
+                                    "X dimension in %s \
+                                    do not match description!",
+                                    found_characteristic_line.name,
+                                )
                             if len(parameters) != found_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_characteristic_line.name
+                                        do not match description!",
+                                    found_characteristic_line.name,
                                 )
                             found_characteristic_line.values = dict(zip(stx, parameters))
                             break
@@ -311,7 +315,8 @@ class DcmReader:
                             if len(parameters) != found_fixed_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_fixed_characteristic_line.name
+                                        do not match description!",
+                                    found_fixed_characteristic_line.name,
                                 )
                             found_fixed_characteristic_line.values = dict(zip(stx, parameters))
                             break
@@ -360,12 +365,14 @@ class DcmReader:
                             if len(parameters) != found_group_characteristic_line.x_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        do not match description!", found_group_characteristic_line.name
+                                        do not match description!",
+                                    found_group_characteristic_line.name,
                                 )
                             if len(stx) != found_group_characteristic_line.x_dimension:
                                 logger.error(
                                     "X dimension in %s \
-                                        do not match description!", found_group_characteristic_line.name
+                                        do not match description!",
+                                    found_group_characteristic_line.name,
                                 )
                             found_group_characteristic_line.values = dict(zip(stx, parameters))
                             break
@@ -415,16 +422,21 @@ class DcmReader:
                             if len(found_characteristic_map.values) != found_characteristic_map.y_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        does not match description!", found_characteristic_map.name
+                                        does not match description!",
+                                    found_characteristic_map.name,
                                 )
                             if len(stx) != found_characteristic_map.x_dimension:
-                                logger.error("X dimension in %s \
-                                    do not match description!", found_characteristic_map.name)
+                                logger.error(
+                                    "X dimension in %s \
+                                    do not match description!",
+                                    found_characteristic_map.name,
+                                )
                             for name, entry in found_characteristic_map.values.items():
                                 if len(entry) != found_characteristic_map.x_dimension:
                                     logger.error(
                                         "Values dimension in %s \
-                                            does not match description!", found_characteristic_map.name
+                                            does not match description!",
+                                        found_characteristic_map.name,
                                     )
                                 else:
                                     found_characteristic_map.values[name] = dict(zip(stx, entry))
@@ -487,7 +499,8 @@ class DcmReader:
                             if len(found_fixed_characteristic_map.values) != found_fixed_characteristic_map.y_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        does not match description!", found_fixed_characteristic_map.name
+                                        does not match description!",
+                                    found_fixed_characteristic_map.name,
                                 )
                             if len(stx) != found_fixed_characteristic_map.x_dimension:
                                 logger.error(
@@ -497,7 +510,8 @@ class DcmReader:
                                 if len(entry) != found_fixed_characteristic_map.x_dimension:
                                     logger.error(
                                         "Values dimension in %s \
-                                            does not match description!", found_fixed_characteristic_map.name
+                                            does not match description!",
+                                        found_fixed_characteristic_map.name,
                                     )
                                 else:
                                     found_fixed_characteristic_map.values[name] = dict(zip(stx, entry))
@@ -560,7 +574,8 @@ class DcmReader:
                             if len(found_group_characteristic_map.values) != found_group_characteristic_map.y_dimension:
                                 logger.error(
                                     "Values dimension in %s \
-                                        does not match description!", found_group_characteristic_map.name
+                                        does not match description!",
+                                    found_group_characteristic_map.name,
                                 )
                             if len(stx) != found_group_characteristic_map.x_dimension:
                                 logger.error(
@@ -570,7 +585,8 @@ class DcmReader:
                                 if len(entry) != found_group_characteristic_map.x_dimension:
                                     logger.error(
                                         "Values dimension in %s \
-                                            does not match description!", found_group_characteristic_map.name
+                                            does not match description!",
+                                        found_group_characteristic_map.name,
                                     )
                                 else:
                                     found_group_characteristic_map.values[name] = dict(zip(stx, entry))

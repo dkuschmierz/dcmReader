@@ -54,15 +54,15 @@ class DcmCharacteristicLine:
         if self.unit_values:
             value += f'  EINHEIT_W     "{self.unit_values}"\n'
         if self.x_mapping:
-            value += f'*SSTX   {self.x_mapping}\n'
+            value += f"*SSTX   {self.x_mapping}\n"
         if self.values:
             x_entries = ""
             value_entries = ""
             for x_entry, value_entry in self.values.items():
                 x_entries += f"{str(x_entry)} "
                 value_entries += f"{str(value_entry)} "
-            value += f'  ST/X          {x_entries.strip()}\n'
-            value += f'  WERT          {value_entries.strip()}\n'
+            value += f"  ST/X          {x_entries.strip()}\n"
+            value += f"  WERT          {value_entries.strip()}\n"
         for var_name, var_value in self.variants.items():
             value += f"  VAR           {var_name}={var_value}\n"
 

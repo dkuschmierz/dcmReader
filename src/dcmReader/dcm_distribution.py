@@ -49,7 +49,7 @@ class DcmDistribution:
             x_entries = ""
             for x_entry in self.values:
                 x_entries += f"{str(x_entry)} "
-            value += f'  ST/X          {x_entries.strip()}\n'
+            value += f"  ST/X          {x_entries.strip()}\n"
         for var_name, var_value in self.variants.items():
             value += f"  VAR           {var_name}={var_value}\n"
 
