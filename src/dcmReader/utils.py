@@ -174,19 +174,19 @@ _SETTINGS: T_Settings = {
     "SSTX": {
         # From comments:
         "key_ger": "SSTX",
-        "key_eng": "x_mapping",
+        "key_eng": "name_x",
         "print_key": "*SSTY",
         "print_format": lambda x: f"{x}",
-        "parse_key": "x_mapping",
+        "parse_key": "name_x",
         "parse_method": lambda self: self._parse_string,
     },
     "SSTY": {
         # From comments:
         "key_ger": "SSTY",
-        "key_eng": "y_mapping",
+        "key_eng": "name_x",
         "print_key": "*SSTY",
         "print_format": lambda x: f"{x}",
-        "parse_key": "y_mapping",
+        "parse_key": "name_x",
         "parse_method": lambda self: self._parse_string,
     },
     "WERT": {
