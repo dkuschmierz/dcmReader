@@ -76,12 +76,12 @@ class DcmReader:
     def _parse_comment(self, line: str, *, element: T_Element, **kwargs) -> None:
         # TODO: Should the comment remember which row? So it can be reprinted there?
 
-        cq, line_no_cq = line[0], line[1:].strip()
+        line_no_cq = line[1:].strip()
         k = line_no_cq.split(None, 1)[0]
 
         p = self.parser_methods.get(k, None)
         if p is not None:
-            # The comment has known keyword, parse it accordingly:
+            # The comment has a known keyword, parse it accordingly:
             parsed_values = p["parse_method"](self)(line_no_cq, attrs=element.attrs, **kwargs)
 
             # Optionally store in attrs, otherwise assume it's
@@ -90,7 +90,8 @@ class DcmReader:
                 element.attrs[p["parse_key"]] = parsed_values
         else:
             cmnt_prev = element.attrs.get("comment", "")
-            element.attrs["comment"] = f"{cmnt_prev}{line_no_cq}\n"
+            cmnts = [cmnt_prev, line_no_cq] if cmnt_prev else [line_no_cq]
+            element.attrs["comment"] = "\n".join(cmnts)
 
     def _parse_string(self, line: str, **kwargs) -> str:
         """Parses a text field
