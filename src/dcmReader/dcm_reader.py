@@ -162,8 +162,8 @@ class DcmReader:
             raise ValueError(f"Cannot convert {value} from string to number.") from err
 
     def _parse_elements(self, DcmElement: type[T_Element], line_intro: str, dcm_file: TextIOWrapper) -> T_Element:
-        block_type, name, *shape_rev = line_intro.split()
-        element = DcmElement(name=name, block_type=block_type)
+        element_syntax, name, *shape_rev = line_intro.split()
+        element = DcmElement(name=name, element_syntax=element_syntax)
 
         # Reverse the order of x and y to match numpy:
         shape_rev.reverse()
@@ -178,13 +178,13 @@ class DcmReader:
             keyword = line.split(None, 1)[0]
 
             if keyword.startswith("END"):
-                if block_type == "STUETZSTELLENVERTEILUNG":
+                if element_syntax == "STUETZSTELLENVERTEILUNG":
                     element.values = np.asarray(coord_x)
-                    element.attrs["x_mapping"] = element.name
+                    element.attrs[_SETTINGS["SSTX"]["key_eng"]] = element.name
 
                 # Handle coords and dims:
                 xy = ("x", "y")
-                k_axis = tuple(f"{v}_mapping" for v in xy)
+                k_axis = tuple(_SETTINGS[f"SST{v.upper()}"]["key_eng"] for v in xy)
                 crds_rev = (coord_x, coord_y)
                 dims_rev = []
                 coords_rev = []
@@ -223,7 +223,7 @@ class DcmReader:
     def _parse_elements_funktionen(
         self, DcmElement: type[T_Element], line_intro: str, dcm_file: TextIOWrapper
     ) -> list[T_Element]:
-        # block_type = line_intro.strip()
+        # element_syntax = line_intro.strip()
 
         elements = []
         while True:
@@ -236,14 +236,14 @@ class DcmReader:
                 break
             else:
                 function_match = re.search(r"FKT (.*?)(?: \"(.*?)?\"(?: \"(.*?)?\")?)?$", line.strip())
-                block_type_short = "FKT"
+                element_syntax_short = "FKT"
 
                 fm: dict[str, str] = {"name": "", "version": "", "description": ""}
                 for i, (k, v) in enumerate(fm.items()):
                     if function_match is not None:
                         fm[k] = function_match.group(i + 1)
 
-                element = DcmElement(name=fm["name"], block_type=block_type_short)
+                element = DcmElement(name=fm["name"], element_syntax=element_syntax_short)
                 element.attrs["version"] = fm["version"]
                 element.attrs["description"] = fm["description"]
                 element.attrs["_function"] = "FUNKTIONEN"

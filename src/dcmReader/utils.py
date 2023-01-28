@@ -183,10 +183,10 @@ _SETTINGS: T_Settings = {
     "SSTY": {
         # From comments:
         "key_ger": "SSTY",
-        "key_eng": "name_x",
+        "key_eng": "name_y",
         "print_key": "*SSTY",
         "print_format": lambda x: f"{x}",
-        "parse_key": "name_x",
+        "parse_key": "name_y",
         "parse_method": lambda self: self._parse_string,
     },
     "WERT": {
@@ -237,7 +237,7 @@ class _DcmBase(ShapeRelatedMixin):
     coords: tuple[np.ndarray, ...] = field(default_factory=tuple)
     dims: tuple[str, ...] = field(default_factory=tuple)
     attrs: dict = field(default_factory=dict)
-    block_type: str = ""
+    element_syntax: str = ""
 
     def __lt__(self, other):
         self_function = self.attrs.get("function", "")
@@ -268,13 +268,13 @@ class _DcmBase(ShapeRelatedMixin):
 
         ndim = self.ndim
         shape_rev: list[int | str] = list(reversed(self.shape))
-        if self.block_type == "FESTWERTEBLOCK" and ndim == 2:
+        if self.element_syntax == "FESTWERTEBLOCK" and ndim == 2:
             shape_rev.insert(1, "@")
         coords_rev = list(reversed(self.coords))
         ncoords = len(coords_rev)
 
         # Header:
-        value = f"{self.block_type} {self.name} {_to_str(shape_rev)}\n"
+        value = f"{self.element_syntax} {self.name} {_to_str(shape_rev)}\n"
 
         # Attributes printed before the values:
         for k in _SETTINGS.keys():

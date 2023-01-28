@@ -36,7 +36,7 @@ class DcmFunction(_DcmBase):
     def _print_dcm_format(self) -> str:
         version = self.attrs.get("version", "")
         description = self.attrs.get("description", "")
-        return f'{self.block_type} {self.name} "{version}" "{description}"'
+        return f'{self.element_syntax} {self.name} "{version}" "{description}"'
 
 
 @dataclass
