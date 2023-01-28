@@ -44,13 +44,13 @@ class TestParameters(unittest.TestCase):
         valueParameter = dcm.get_parameters()[0]
 
         self.assertEqual("valueParameter", valueParameter.name)
-        self.assertEqual("Sample value parameter", valueParameter.description)
-        self.assertEqual("ParameterFunction", valueParameter.function)
-        self.assertEqual("°C", valueParameter.unit)
-        self.assertEqual(25.0, valueParameter.value)
-        self.assertEqual(27.5, valueParameter.variants["VariantA"])
+        self.assertEqual("Sample value parameter", valueParameter.attrs["description"])
+        self.assertEqual("ParameterFunction", valueParameter.attrs["function"])
+        self.assertEqual("°C", valueParameter.attrs["units"])
+        self.assertEqual(25.0, valueParameter.values)
+        self.assertEqual(27.5, valueParameter.attrs["variants"]["VariantA"])
         self.assertEqual(None, valueParameter.text)
-        self.assertEqual("Sample comment\nSecond comment line\n", valueParameter.comment)
+        self.assertEqual("Sample comment\nSecond comment line", valueParameter.attrs["comment"])
 
     def test_textParameter(self):
         dcm = DcmReader()
@@ -60,11 +60,11 @@ class TestParameters(unittest.TestCase):
         valueParameter = dcm.get_parameters()[1]
 
         self.assertEqual("textParameter", valueParameter.name)
-        self.assertEqual("Sample text parameter", valueParameter.description)
-        self.assertEqual("ParameterFunction", valueParameter.function)
-        self.assertEqual("-", valueParameter.unit)
-        self.assertEqual(None, valueParameter.value)
-        self.assertEqual("ParameterB", valueParameter.variants["VariantA"])
+        self.assertEqual("Sample text parameter", valueParameter.attrs["description"])
+        self.assertEqual("ParameterFunction", valueParameter.attrs["function"])
+        self.assertEqual("-", valueParameter.attrs["units"])
+        self.assertEqual(None, valueParameter.values)
+        self.assertEqual("ParameterB", valueParameter.attrs["variants"]["VariantA"])
         self.assertEqual("ParameterA", valueParameter.text)
 
 
@@ -78,26 +78,26 @@ class TestParameterBlock(unittest.TestCase):
         blockParameterWritten = dcmWritten.get_block_parameters()[0]
 
         self.assertEqual("blockParameter1D", blockParameter.name)
-        self.assertEqual("Sample block parameters", blockParameter.description)
-        self.assertEqual("BlockParameterFunction", blockParameter.function)
-        self.assertEqual("BlockParameterDisplayname", blockParameter.display_name)
-        self.assertEqual("°C", blockParameter.unit)
+        self.assertEqual("Sample block parameters", blockParameter.attrs["description"])
+        self.assertEqual("BlockParameterFunction", blockParameter.attrs["function"])
+        self.assertEqual("BlockParameterDisplayname", blockParameter.attrs["display_name"])
+        self.assertEqual("°C", blockParameter.attrs["units"])
         self.assertEqual(0.75, blockParameter.values[0][0])
         self.assertEqual(-0.25, blockParameter.values[0][1])
         self.assertEqual(0.5, blockParameter.values[0][2])
         self.assertEqual(1.5, blockParameter.values[0][3])
-        self.assertEqual("Sample comment\n", blockParameter.comment)
+        self.assertEqual("Sample comment", blockParameter.attrs["comment"])
 
         self.assertEqual("blockParameter1D", blockParameterWritten.name)
-        self.assertEqual("Sample block parameters", blockParameterWritten.description)
-        self.assertEqual("BlockParameterFunction", blockParameterWritten.function)
-        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.display_name)
-        self.assertEqual("°C", blockParameterWritten.unit)
+        self.assertEqual("Sample block parameters", blockParameterWritten.attrs["description"])
+        self.assertEqual("BlockParameterFunction", blockParameterWritten.attrs["function"])
+        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.attrs["display_name"])
+        self.assertEqual("°C", blockParameterWritten.attrs["units"])
         self.assertEqual(0.75, blockParameterWritten.values[0][0])
         self.assertEqual(-0.25, blockParameterWritten.values[0][1])
         self.assertEqual(0.5, blockParameterWritten.values[0][2])
         self.assertEqual(1.5, blockParameterWritten.values[0][3])
-        self.assertEqual("Sample comment\n", blockParameterWritten.comment)
+        self.assertEqual("Sample comment", blockParameterWritten.attrs["comment"])
 
     def test_blockParameter2D(self):
         dcm = DcmReader()
@@ -108,10 +108,10 @@ class TestParameterBlock(unittest.TestCase):
         blockParameterWritten = dcmWritten.get_block_parameters()[1]
 
         self.assertEqual("blockParameter2D", blockParameter.name)
-        self.assertEqual("Sample block parameters", blockParameter.description)
-        self.assertEqual("BlockParameterFunction", blockParameter.function)
-        self.assertEqual("BlockParameterDisplayname", blockParameter.display_name)
-        self.assertEqual("°C", blockParameter.unit)
+        self.assertEqual("Sample block parameters", blockParameter.attrs["description"])
+        self.assertEqual("BlockParameterFunction", blockParameter.attrs["function"])
+        self.assertEqual("BlockParameterDisplayname", blockParameter.attrs["display_name"])
+        self.assertEqual("°C", blockParameter.attrs["units"])
         self.assertEqual(0.75, blockParameter.values[0][0])
         self.assertEqual(-0.25, blockParameter.values[0][1])
         self.assertEqual(0.5, blockParameter.values[0][2])
@@ -122,10 +122,10 @@ class TestParameterBlock(unittest.TestCase):
         self.assertEqual(11.5, blockParameter.values[1][3])
 
         self.assertEqual("blockParameter2D", blockParameterWritten.name)
-        self.assertEqual("Sample block parameters", blockParameterWritten.description)
-        self.assertEqual("BlockParameterFunction", blockParameterWritten.function)
-        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.display_name)
-        self.assertEqual("°C", blockParameterWritten.unit)
+        self.assertEqual("Sample block parameters", blockParameterWritten.attrs["description"])
+        self.assertEqual("BlockParameterFunction", blockParameterWritten.attrs["function"])
+        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.attrs["display_name"])
+        self.assertEqual("°C", blockParameterWritten.attrs["units"])
         self.assertEqual(0.75, blockParameterWritten.values[0][0])
         self.assertEqual(-0.25, blockParameterWritten.values[0][1])
         self.assertEqual(0.5, blockParameterWritten.values[0][2])
@@ -148,11 +148,11 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_characteristic_lines()))
 
         self.assertEqual("characteristicLine", characteristic.name)
-        self.assertEqual("Sample characteristic line", characteristic.description)
-        self.assertEqual("CharacteristicLineFunction", characteristic.function)
-        self.assertEqual("CharacteristicLineDisplayname", characteristic.display_name)
+        self.assertEqual("Sample characteristic line", characteristic.attrs["description"])
+        self.assertEqual("CharacteristicLineFunction", characteristic.attrs["function"])
+        self.assertEqual("CharacteristicLineDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.unit_x)
+        self.assertEqual("s", characteristic.attrs["units_x"])
         self.assertEqual(0.0, characteristic.values[0.0])
         self.assertEqual(80.0, characteristic.values[1.0])
         self.assertEqual(120.0, characteristic.values[2.0])
@@ -162,16 +162,16 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(300.0, characteristic.values[6.0])
         self.assertEqual(340.0, characteristic.values[7.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_characteristic_lines()))
 
         self.assertEqual("characteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample characteristic line", characteristicWritten.description)
-        self.assertEqual("CharacteristicLineFunction", characteristicWritten.function)
-        self.assertEqual("CharacteristicLineDisplayname", characteristicWritten.display_name)
+        self.assertEqual("Sample characteristic line", characteristicWritten.attrs["description"])
+        self.assertEqual("CharacteristicLineFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("CharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.unit_x)
+        self.assertEqual("s", characteristicWritten.attrs["units_x"])
         self.assertEqual(0.0, characteristicWritten.values[0.0])
         self.assertEqual(80.0, characteristicWritten.values[1.0])
         self.assertEqual(120.0, characteristicWritten.values[2.0])
@@ -181,7 +181,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(300.0, characteristicWritten.values[6.0])
         self.assertEqual(340.0, characteristicWritten.values[7.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
     def test_fixedCharacteristicLine(self):
         dcm = DcmReader()
@@ -194,13 +194,11 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_fixed_characteristic_lines()))
 
         self.assertEqual("fixedCharacteristicLine", characteristic.name)
-        self.assertEqual("Sample fixed characteristic line", characteristic.description)
-        self.assertEqual("FixedCharacteristicLineFunction", characteristic.function)
-        self.assertEqual(
-            "FixedCharacteristicLineDisplayname", characteristic.display_name
-        )
+        self.assertEqual("Sample fixed characteristic line", characteristic.attrs["description"])
+        self.assertEqual("FixedCharacteristicLineFunction", characteristic.attrs["function"])
+        self.assertEqual("FixedCharacteristicLineDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.unit_x)
+        self.assertEqual("s", characteristic.attrs["units_x"])
         self.assertEqual(45.0, characteristic.values[0.0])
         self.assertEqual(90.0, characteristic.values[1.0])
         self.assertEqual(135.0, characteristic.values[2.0])
@@ -208,18 +206,16 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(225.0, characteristic.values[4.0])
         self.assertEqual(270.0, characteristic.values[5.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_fixed_characteristic_lines()))
 
         self.assertEqual("fixedCharacteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample fixed characteristic line", characteristicWritten.description)
-        self.assertEqual("FixedCharacteristicLineFunction", characteristicWritten.function)
-        self.assertEqual(
-            "FixedCharacteristicLineDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("Sample fixed characteristic line", characteristicWritten.attrs["description"])
+        self.assertEqual("FixedCharacteristicLineFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("FixedCharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.unit_x)
+        self.assertEqual("s", characteristicWritten.attrs["units_x"])
         self.assertEqual(45.0, characteristicWritten.values[0.0])
         self.assertEqual(90.0, characteristicWritten.values[1.0])
         self.assertEqual(135.0, characteristicWritten.values[2.0])
@@ -227,7 +223,7 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(225.0, characteristicWritten.values[4.0])
         self.assertEqual(270.0, characteristicWritten.values[5.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
     def test_groupCharacteristicLine(self):
         dcm = DcmReader()
@@ -240,34 +236,30 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_group_characteristic_lines()))
 
         self.assertEqual("groupCharacteristicLine", characteristic.name)
-        self.assertEqual("Sample group characteristic line", characteristic.description)
-        self.assertEqual("GroupCharacteristicLineFunction", characteristic.function)
-        self.assertEqual(
-            "GroupCharacteristicLineDisplayname", characteristic.display_name
-        )
+        self.assertEqual("Sample group characteristic line", characteristic.attrs["description"])
+        self.assertEqual("GroupCharacteristicLineFunction", characteristic.attrs["function"])
+        self.assertEqual("GroupCharacteristicLineDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.unit_x)
+        self.assertEqual("s", characteristic.attrs["units_x"])
         self.assertEqual(-45.0, characteristic.values[1.0])
         self.assertEqual(-90.0, characteristic.values[2.0])
         self.assertEqual(-135.0, characteristic.values[3.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_group_characteristic_lines()))
 
         self.assertEqual("groupCharacteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample group characteristic line", characteristicWritten.description)
-        self.assertEqual("GroupCharacteristicLineFunction", characteristicWritten.function)
-        self.assertEqual(
-            "GroupCharacteristicLineDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("Sample group characteristic line", characteristicWritten.attrs["description"])
+        self.assertEqual("GroupCharacteristicLineFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("GroupCharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.unit_x)
+        self.assertEqual("s", characteristicWritten.attrs["units_x"])
         self.assertEqual(-45.0, characteristicWritten.values[1.0])
         self.assertEqual(-90.0, characteristicWritten.values[2.0])
         self.assertEqual(-135.0, characteristicWritten.values[3.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
 
 class TestCharacteristicMaps(unittest.TestCase):
@@ -282,12 +274,12 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_characteristic_maps()))
 
         self.assertEqual("characteristicMap", characteristic.name)
-        self.assertEqual("Sample characteristic map", characteristic.description)
-        self.assertEqual("CharacteristicMapFunction", characteristic.function)
-        self.assertEqual("CharacteristicMapDisplayname", characteristic.display_name)
+        self.assertEqual("Sample characteristic map", characteristic.attrs["description"])
+        self.assertEqual("CharacteristicMapFunction", characteristic.attrs["function"])
+        self.assertEqual("CharacteristicMapDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.unit_x)
-        self.assertEqual("m/s", characteristic.unit_y)
+        self.assertEqual("°C", characteristic.attrs["units_x"])
+        self.assertEqual("m/s", characteristic.attrs["units_y"])
         self.assertEqual(0.0, characteristic.values[1.0][1.0])
         self.assertEqual(0.4, characteristic.values[1.0][2.0])
         self.assertEqual(0.8, characteristic.values[1.0][3.0])
@@ -302,17 +294,17 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(4.0, characteristic.values[2.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_characteristic_maps()))
 
         self.assertEqual("characteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample characteristic map", characteristicWritten.description)
-        self.assertEqual("CharacteristicMapFunction", characteristicWritten.function)
-        self.assertEqual("CharacteristicMapDisplayname", characteristicWritten.display_name)
+        self.assertEqual("Sample characteristic map", characteristicWritten.attrs["description"])
+        self.assertEqual("CharacteristicMapFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("CharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.unit_x)
-        self.assertEqual("m/s", characteristicWritten.unit_y)
+        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
+        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
         self.assertEqual(0.0, characteristicWritten.values[1.0][1.0])
         self.assertEqual(0.4, characteristicWritten.values[1.0][2.0])
         self.assertEqual(0.8, characteristicWritten.values[1.0][3.0])
@@ -327,7 +319,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(4.0, characteristicWritten.values[2.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
     def test_fixedCharacteristicMap(self):
         dcm = DcmReader()
@@ -340,14 +332,12 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_fixed_characteristic_maps()))
 
         self.assertEqual("fixedCharacteristicMap", characteristic.name)
-        self.assertEqual("Sample fixed characteristic map", characteristic.description)
-        self.assertEqual("FixedCharacteristicMapFunction", characteristic.function)
-        self.assertEqual(
-            "FixedCharacteristicMapDisplayname", characteristic.display_name
-        )
+        self.assertEqual("Sample fixed characteristic map", characteristic.attrs["description"])
+        self.assertEqual("FixedCharacteristicMapFunction", characteristic.attrs["function"])
+        self.assertEqual("FixedCharacteristicMapDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.unit_x)
-        self.assertEqual("m/s", characteristic.unit_y)
+        self.assertEqual("°C", characteristic.attrs["units_x"])
+        self.assertEqual("m/s", characteristic.attrs["units_y"])
         self.assertEqual(0.0, characteristic.values[0.0][1.0])
         self.assertEqual(0.4, characteristic.values[0.0][2.0])
         self.assertEqual(0.8, characteristic.values[0.0][3.0])
@@ -362,19 +352,17 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(4.0, characteristic.values[1.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_fixed_characteristic_maps()))
 
         self.assertEqual("fixedCharacteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample fixed characteristic map", characteristicWritten.description)
-        self.assertEqual("FixedCharacteristicMapFunction", characteristicWritten.function)
-        self.assertEqual(
-            "FixedCharacteristicMapDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("Sample fixed characteristic map", characteristicWritten.attrs["description"])
+        self.assertEqual("FixedCharacteristicMapFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("FixedCharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.unit_x)
-        self.assertEqual("m/s", characteristicWritten.unit_y)
+        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
+        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
         self.assertEqual(0.0, characteristicWritten.values[0.0][1.0])
         self.assertEqual(0.4, characteristicWritten.values[0.0][2.0])
         self.assertEqual(0.8, characteristicWritten.values[0.0][3.0])
@@ -389,7 +377,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(4.0, characteristicWritten.values[1.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
     def test_groupCharacteristicMap(self):
         dcm = DcmReader()
@@ -402,14 +390,12 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_group_characteristic_maps()))
 
         self.assertEqual("groupCharacteristicMap", characteristic.name)
-        self.assertEqual("Sample group characteristic map", characteristic.description)
-        self.assertEqual("GroupCharacteristicMapFunction", characteristic.function)
-        self.assertEqual(
-            "GroupCharacteristicMapDisplayname", characteristic.display_name
-        )
+        self.assertEqual("Sample group characteristic map", characteristic.attrs["description"])
+        self.assertEqual("GroupCharacteristicMapFunction", characteristic.attrs["function"])
+        self.assertEqual("GroupCharacteristicMapDisplayname", characteristic.attrs["display_name"])
         self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.unit_x)
-        self.assertEqual("m/s", characteristic.unit_y)
+        self.assertEqual("°C", characteristic.attrs["units_x"])
+        self.assertEqual("m/s", characteristic.attrs["units_y"])
         self.assertEqual(1.0, characteristic.values[1.0][1.0])
         self.assertEqual(2.0, characteristic.values[1.0][2.0])
         self.assertEqual(3.0, characteristic.values[1.0][3.0])
@@ -430,19 +416,17 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(9.0, characteristic.values[3.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment\n", characteristic.comment)
+        self.assertEqual("Sample comment", characteristic.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_group_characteristic_maps()))
 
         self.assertEqual("groupCharacteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample group characteristic map", characteristicWritten.description)
-        self.assertEqual("GroupCharacteristicMapFunction", characteristicWritten.function)
-        self.assertEqual(
-            "GroupCharacteristicMapDisplayname", characteristicWritten.display_name
-        )
+        self.assertEqual("Sample group characteristic map", characteristicWritten.attrs["description"])
+        self.assertEqual("GroupCharacteristicMapFunction", characteristicWritten.attrs["function"])
+        self.assertEqual("GroupCharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
         self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.unit_x)
-        self.assertEqual("m/s", characteristicWritten.unit_y)
+        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
+        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
         self.assertEqual(1.0, characteristicWritten.values[1.0][1.0])
         self.assertEqual(2.0, characteristicWritten.values[1.0][2.0])
         self.assertEqual(3.0, characteristicWritten.values[1.0][3.0])
@@ -463,7 +447,7 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual(9.0, characteristicWritten.values[3.0][6.0])
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
         self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment\n", characteristicWritten.comment)
+        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
 
 
 class TestDistribution(unittest.TestCase):
@@ -478,26 +462,26 @@ class TestDistribution(unittest.TestCase):
         self.assertEqual(1, len(dcm.get_distributions()))
 
         self.assertEqual("distrib", distribution.name)
-        self.assertEqual("Sample distribution", distribution.description)
-        self.assertEqual("DistributionFunction", distribution.function)
-        self.assertEqual("DistributionDisplayname", distribution.display_name)
-        self.assertEqual("mm", distribution.unit_x)
+        self.assertEqual("Sample distribution", distribution.attrs["description"])
+        self.assertEqual("DistributionFunction", distribution.attrs["function"])
+        self.assertEqual("DistributionDisplayname", distribution.attrs["display_name"])
+        self.assertEqual("mm", distribution.attrs["units_x"])
         self.assertEqual(1.0, distribution.values[0])
         self.assertEqual(2.0, distribution.values[1])
         self.assertEqual(3.0, distribution.values[2])
-        self.assertEqual("SST\n", distribution.comment)
+        self.assertEqual("SST", distribution.attrs["comment"])
 
         self.assertEqual(1, len(dcmWritten.get_distributions()))
 
         self.assertEqual("distrib", distributionWritten.name)
-        self.assertEqual("Sample distribution", distributionWritten.description)
-        self.assertEqual("DistributionFunction", distributionWritten.function)
-        self.assertEqual("DistributionDisplayname", distributionWritten.display_name)
-        self.assertEqual("mm", distributionWritten.unit_x)
+        self.assertEqual("Sample distribution", distributionWritten.attrs["description"])
+        self.assertEqual("DistributionFunction", distributionWritten.attrs["function"])
+        self.assertEqual("DistributionDisplayname", distributionWritten.attrs["display_name"])
+        self.assertEqual("mm", distributionWritten.attrs["units_x"])
         self.assertEqual(1.0, distributionWritten.values[0])
         self.assertEqual(2.0, distributionWritten.values[1])
         self.assertEqual(3.0, distributionWritten.values[2])
-        self.assertEqual("SST\n", distributionWritten.comment)
+        self.assertEqual("SST", distributionWritten.attrs["comment"])
 
 
 if __name__ == "__main__":
