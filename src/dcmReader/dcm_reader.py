@@ -27,7 +27,7 @@ from dcmReader.elements import (
     DcmGroupCharacteristicMap,
     DcmDistribution,
 )
-from dcmReader.utils import _SETTINGS
+from dcmReader.utils import _COMMENT_QUALIFIER, _SETTINGS
 
 if TYPE_CHECKING:
     from io import TextIOWrapper
@@ -38,8 +38,6 @@ if TYPE_CHECKING:
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-comment_qualifier = ("!", "*", ".")
 
 
 @dataclass
@@ -92,7 +90,7 @@ class DcmReader:
                 element.attrs[p["parse_key"]] = parsed_values
         else:
             cmnt_prev = element.attrs.get("comment", "")
-            element.attrs["comment"] = f"{cmnt_prev}{line_no_cq}{os.linesep}"
+            element.attrs["comment"] = f"{cmnt_prev}{line_no_cq}\n"
 
     def _parse_string(self, line: str, **kwargs) -> str:
         """Parses a text field
@@ -284,9 +282,9 @@ class DcmReader:
                 line = line.strip()
 
                 # Check if line is comment
-                if line.startswith(comment_qualifier):
+                if line.startswith(_COMMENT_QUALIFIER):
                     if not file_header_finished:
-                        self.attrs["file_header"] = self.attrs.get("file_header", "") + line[1:].strip() + os.linesep
+                        self.attrs["file_header"] = f"{self.attrs.get('file_header', '')}{line[1:].strip()}\n"
                     continue
 
                 # At this point first comment block passed
