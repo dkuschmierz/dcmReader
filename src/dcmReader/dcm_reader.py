@@ -413,7 +413,7 @@ class DcmReader:
         output_string += "END\n\n"
 
         # Print rest of DCM objects
-        object_list: list[_DcmBase] = []
+        object_list: list[T_Element] = []
         object_list.extend(self._parameter_list)
         object_list.extend(self._block_parameter_list)
         object_list.extend(self._characteristic_line_list)
