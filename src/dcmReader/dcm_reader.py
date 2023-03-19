@@ -9,7 +9,7 @@ import logging
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypeVar, Any
+from typing import TYPE_CHECKING, TypeVar, Any, Generic, Protocol
 
 import numpy as np
 
@@ -54,6 +54,7 @@ class DcmReader:
     _fixed_characteristic_map_list: list[DcmFixedCharacteristicMap] = field(repr=False, default_factory=list)
     _group_characteristic_map_list: list[DcmGroupCharacteristicMap] = field(repr=False, default_factory=list)
     _distribution_list: list[DcmDistribution] = field(repr=False, default_factory=list)
+    _data: dict[str, _DcmBase] = field(repr=False, default_factory=dict)
     attrs: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -113,19 +114,19 @@ class DcmReader:
             or as str if variant is text field
         """
         variant = re.search(r"VAR\s+(.*?)=(.*)", line.strip())
-        value = None
-        if variant is not None:
-            key = str(variant.group(1)).strip()
-            value_str = str(variant.group(2)).strip()
-            try:
-                # Check if it's number
-                value = self._convert_value(value_str)
-            except ValueError:
-                value = value_str.strip('" ')
-
-            return {key: value}
-        else:
+        if variant is None:
             return {}
+
+        key = str(variant.group(1)).strip()
+        value_str = str(variant.group(2)).strip()
+        value: str | float | None = None
+        try:
+            # Check if it's number
+            value = self._convert_value(value_str)
+        except ValueError:
+            value = value_str.strip('" ')
+
+        return {key: value}
 
     def _parse_block_parameters(self, line: str, **kwargs) -> list:
         """Parses a block parameters line
@@ -357,6 +358,22 @@ class DcmReader:
                 else:
                     logger.warning("Unknown line detected\n%s", line)
 
+        _all = (
+            self._parameter_list
+            + self._block_parameter_list
+            + self._characteristic_line_list
+            + self._fixed_characteristic_line_list
+            + self._group_characteristic_line_list
+            + self._characteristic_map_list
+            + self._fixed_characteristic_map_list
+            + self._group_characteristic_map_list
+            + self._distribution_list
+        )
+        for v in _all:
+            if self._data.get(v.name) is not None:
+                raise NotImplementedError("Duplicated names not supported?")
+            self._data[v.name] = v
+
     def get_functions(self) -> list:
         """Returns all found functions as a list"""
         return self._functions_list
@@ -413,7 +430,7 @@ class DcmReader:
         output_string += "END\n\n"
 
         # Print rest of DCM objects
-        object_list: list[T_Element] = []
+        object_list: list[_DcmBase] = []
         object_list.extend(self._parameter_list)
         object_list.extend(self._block_parameter_list)
         object_list.extend(self._characteristic_line_list)
@@ -428,3 +445,6 @@ class DcmReader:
             output_string += f"\n{item}\n"
 
         return output_string
+
+    def __getitem__(self, key):
+        return self._data[key]
