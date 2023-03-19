@@ -1,12 +1,16 @@
 import os
 import sys
 import unittest
+import pytest
+
+import numpy as np
+
+from dcmReader.dcm_reader import DcmReader
+
 
 testdir = os.path.dirname(__file__)
 srcdir = "../src"
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
-
-from dcmReader.dcm_reader import DcmReader
 
 
 class TestWriteFile(unittest.TestCase):
@@ -36,453 +40,233 @@ class TestParameters(unittest.TestCase):
         self.assertEqual(2, len(dcm.get_parameters()))
         self.assertEqual(2, len(dcmWritten.get_parameters()))
 
-    def test_valueParameter(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        valueParameter = dcm.get_parameters()[0]
 
-        self.assertEqual("valueParameter", valueParameter.name)
-        self.assertEqual("Sample value parameter", valueParameter.attrs["description"])
-        self.assertEqual("ParameterFunction", valueParameter.attrs["function"])
-        self.assertEqual("°C", valueParameter.attrs["units"])
-        self.assertEqual(25.0, valueParameter.values)
-        self.assertEqual(27.5, valueParameter.attrs["variants"]["VariantA"])
-        self.assertEqual(None, valueParameter.text)
-        self.assertEqual("Sample comment\nSecond comment line", valueParameter.attrs["comment"])
+@pytest.mark.parametrize("path", [r"./Sample.dcm", r"./Sample_written.dcm"])
+@pytest.mark.parametrize(
+    "name, attrs, values, coords",
+    [
+        (
+            "valueParameter",
+            {
+                "comment": "Sample comment\nSecond comment line",
+                "description": "Sample value parameter",
+                "function": "ParameterFunction",
+                "display_name": "ParameterDisplayname",
+                "units": "°C",
+                "variants": {"VariantA": 27.5},
+            },
+            np.array(25.0),
+            (),
+        ),
+        (
+            "textParameter",
+            {
+                "description": "Sample text parameter",
+                "function": "ParameterFunction",
+                "display_name": "ParameterDisplayname",
+                "units": "-",
+                "variants": {"VariantA": "ParameterB"},
+            },
+            np.array("ParameterA", dtype=np.dtype("<U32")),
+            (),
+        ),
+        (
+            "blockParameter1D",
+            {
+                "comment": "Sample comment",
+                "description": "Sample block parameters",
+                "function": "BlockParameterFunction",
+                "display_name": "BlockParameterDisplayname",
+                "units": "°C",
+            },
+            np.array([0.75, -0.25, 0.5, 1.5]),
+            (),
+        ),
+        (
+            "blockParameter2D",
+            {
+                "description": "Sample block parameters",
+                "function": "BlockParameterFunction",
+                "display_name": "BlockParameterDisplayname",
+                "units": "°C",
+            },
+            np.array([[0.75, -0.25, 0.5, 1.5], [10.75, -10.25, 10.5, 11.5]]),
+            (),
+        ),
+        (
+            "characteristicLine",
+            {
+                "comment": "Sample comment",
+                "description": "Sample characteristic line",
+                "function": "CharacteristicLineFunction",
+                "display_name": "CharacteristicLineDisplayname",
+                "units_x": "s",
+                "units": "°",
+                "name_x": "DISTRIBUTION X8",
+            },
+            np.array([0.0, 80.0, 120.0, 180.0, 220.0, 260.0, 300.0, 340.0]),
+            (np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]),),
+        ),
+        (
+            "fixedCharacteristicLine",
+            {
+                "comment": "Sample comment",
+                "description": "Sample fixed characteristic line",
+                "function": "FixedCharacteristicLineFunction",
+                "display_name": "FixedCharacteristicLineDisplayname",
+                "units_x": "s",
+                "units": "°",
+                "name_x": "DISTRIBUTION X6",
+            },
+            np.array([45.0, 90.0, 135.0, 180.0, 225.0, 270.0]),
+            (np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]),),
+        ),
+        (
+            "groupCharacteristicLine",
+            {
+                "comment": "Sample comment",
+                "description": "Sample group characteristic line",
+                "function": "GroupCharacteristicLineFunction",
+                "display_name": "GroupCharacteristicLineDisplayname",
+                "units_x": "s",
+                "units": "°",
+                "name_x": "DISTRIBUTION X3",
+            },
+            np.array([-45.0, -90.0, -135.0]),
+            (np.array([1.0, 2.0, 3.0]),),
+        ),
+        (
+            "characteristicMap",
+            {
+                "comment": "Sample comment",
+                "description": "Sample characteristic map",
+                "function": "CharacteristicMapFunction",
+                "display_name": "CharacteristicMapDisplayname",
+                "units_x": "°C",
+                "units_y": "m/s",
+                "units": "bar",
+                "name_x": "DISTRIBUTION X6",
+                "name_y": "DISTRIBUTION Y2",
+            },
+            np.array([[0.0, 0.4, 0.8, 1.0, 1.4, 1.8], [1.0, 2.0, 3.0, 2.0, 3.0, 4.0]]),
+            (np.array([1.0, 2.0]), np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])),
+        ),
+        (
+            "fixedCharacteristicMap",
+            {
+                "comment": "Sample comment",
+                "description": "Sample fixed characteristic map",
+                "function": "FixedCharacteristicMapFunction",
+                "display_name": "FixedCharacteristicMapDisplayname",
+                "units_x": "°C",
+                "units_y": "m/s",
+                "units": "bar",
+                "name_x": "DISTRIBUTION X6",
+                "name_y": "DISTRIBUTION Y2",
+            },
+            np.array([[0.0, 0.4, 0.8, 1.0, 1.4, 1.8], [1.0, 2.0, 3.0, 2.0, 3.0, 4.0]]),
+            (np.array([0.0, 1.0]), np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])),
+        ),
+        (
+            "groupCharacteristicMap",
+            {
+                "comment": "Sample comment",
+                "description": "Sample group characteristic map",
+                "function": "GroupCharacteristicMapFunction",
+                "display_name": "GroupCharacteristicMapDisplayname",
+                "units_x": "°C",
+                "units_y": "m/s",
+                "units": "bar",
+                "name_x": "DISTRIBUTION X6",
+                "name_y": "DISTRIBUTION Y3",
+            },
+            np.array(
+                [
+                    [1.0, 2.0, 3.0, 2.0, 3.0, 4.0],
+                    [2.0, 4.0, 6.0, 3.0, 4.0, 5.0],
+                    [3.0, 6.0, 9.0, 7.0, 8.0, 9.0],
+                ]
+            ),
+            (np.array([1.0, 2.0, 3.0]), np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])),
+        ),
+        (
+            "distrib",
+            {
+                "comment": "SST",
+                "description": "Sample distribution",
+                "function": "DistributionFunction",
+                "display_name": "DistributionDisplayname",
+                "units_x": "mm",
+                "name_x": "distrib",
+            },
+            np.array([1.0, 2.0, 3.0]),
+            (np.array([1.0, 2.0, 3.0]),),
+        ),
+    ],
+)
+def test_elements(
+    path: str,
+    name: str,
+    attrs: dict,
+    values: np.typing.ArrayLike,
+    coords: tuple[np.typing.ArrayLike, ...],
+):
+    """
+    Test elements.
 
-    def test_textParameter(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        valueParameter = dcm.get_parameters()[1]
+    Examples
+    --------
+    >>> # Generate expected results:
+    >>> name = "valueParameter"
+    >>> x = dcm[name]
+    >>> print((x.name, x.attrs, x.values, x.coords))
+    """
 
-        self.assertEqual("textParameter", valueParameter.name)
-        self.assertEqual("Sample text parameter", valueParameter.attrs["description"])
-        self.assertEqual("ParameterFunction", valueParameter.attrs["function"])
-        self.assertEqual("-", valueParameter.attrs["units"])
-        self.assertEqual(None, valueParameter.values)
-        self.assertEqual("ParameterB", valueParameter.attrs["variants"]["VariantA"])
-        self.assertEqual("ParameterA", valueParameter.text)
+    def test_element(
+        name: str,
+        attrs: dict,
+        values: np.ndarray,
+        coords: tuple[np.ndarray, ...],
+        characteristic,
+    ) -> None:
+        # Check name
+        np.testing.assert_array_equal(name, characteristic.name)
 
+        # Check attrs:
+        np.testing.assert_array_equal(len(attrs), len(characteristic.attrs))
+        for k, expected in attrs.items():
+            actual = characteristic.attrs[k]
+            np.testing.assert_array_equal(expected, actual)
 
-class TestParameterBlock(unittest.TestCase):
-    def test_blockParameter1D(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        blockParameter = dcm.get_block_parameters()[0]
-        blockParameterWritten = dcmWritten.get_block_parameters()[0]
+        # Check values:
+        if values.dtype.kind in {"U", "S"}:
+            # Strings:
+            np.testing.assert_array_equal(values, characteristic.values)
+        else:
+            # Numbers:
+            np.testing.assert_allclose(values, characteristic.values)
 
-        self.assertEqual("blockParameter1D", blockParameter.name)
-        self.assertEqual("Sample block parameters", blockParameter.attrs["description"])
-        self.assertEqual("BlockParameterFunction", blockParameter.attrs["function"])
-        self.assertEqual("BlockParameterDisplayname", blockParameter.attrs["display_name"])
-        self.assertEqual("°C", blockParameter.attrs["units"])
-        self.assertEqual(0.75, blockParameter.values[0][0])
-        self.assertEqual(-0.25, blockParameter.values[0][1])
-        self.assertEqual(0.5, blockParameter.values[0][2])
-        self.assertEqual(1.5, blockParameter.values[0][3])
-        self.assertEqual("Sample comment", blockParameter.attrs["comment"])
+        # Check coords:
+        np.testing.assert_array_equal(len(coords), len(characteristic.coords))
+        [np.testing.assert_allclose(e, a) for e, a in zip(coords, characteristic.coords)]
 
-        self.assertEqual("blockParameter1D", blockParameterWritten.name)
-        self.assertEqual("Sample block parameters", blockParameterWritten.attrs["description"])
-        self.assertEqual("BlockParameterFunction", blockParameterWritten.attrs["function"])
-        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.attrs["display_name"])
-        self.assertEqual("°C", blockParameterWritten.attrs["units"])
-        self.assertEqual(0.75, blockParameterWritten.values[0][0])
-        self.assertEqual(-0.25, blockParameterWritten.values[0][1])
-        self.assertEqual(0.5, blockParameterWritten.values[0][2])
-        self.assertEqual(1.5, blockParameterWritten.values[0][3])
-        self.assertEqual("Sample comment", blockParameterWritten.attrs["comment"])
+    dcm = DcmReader()
+    dcmWritten = DcmReader()
+    # dcm.read("./Sample.dcm")
+    # dcmWritten.read("./Sample_written.dcm")
 
-    def test_blockParameter2D(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        blockParameter = dcm.get_block_parameters()[1]
-        blockParameterWritten = dcmWritten.get_block_parameters()[1]
+    dcm.read(path)
 
-        self.assertEqual("blockParameter2D", blockParameter.name)
-        self.assertEqual("Sample block parameters", blockParameter.attrs["description"])
-        self.assertEqual("BlockParameterFunction", blockParameter.attrs["function"])
-        self.assertEqual("BlockParameterDisplayname", blockParameter.attrs["display_name"])
-        self.assertEqual("°C", blockParameter.attrs["units"])
-        self.assertEqual(0.75, blockParameter.values[0][0])
-        self.assertEqual(-0.25, blockParameter.values[0][1])
-        self.assertEqual(0.5, blockParameter.values[0][2])
-        self.assertEqual(1.5, blockParameter.values[0][3])
-        self.assertEqual(10.75, blockParameter.values[1][0])
-        self.assertEqual(-10.25, blockParameter.values[1][1])
-        self.assertEqual(10.5, blockParameter.values[1][2])
-        self.assertEqual(11.5, blockParameter.values[1][3])
+    characteristic = dcm[name]
+    test_element(name, attrs, values, coords, characteristic)
 
-        self.assertEqual("blockParameter2D", blockParameterWritten.name)
-        self.assertEqual("Sample block parameters", blockParameterWritten.attrs["description"])
-        self.assertEqual("BlockParameterFunction", blockParameterWritten.attrs["function"])
-        self.assertEqual("BlockParameterDisplayname", blockParameterWritten.attrs["display_name"])
-        self.assertEqual("°C", blockParameterWritten.attrs["units"])
-        self.assertEqual(0.75, blockParameterWritten.values[0][0])
-        self.assertEqual(-0.25, blockParameterWritten.values[0][1])
-        self.assertEqual(0.5, blockParameterWritten.values[0][2])
-        self.assertEqual(1.5, blockParameterWritten.values[0][3])
-        self.assertEqual(10.75, blockParameterWritten.values[1][0])
-        self.assertEqual(-10.25, blockParameterWritten.values[1][1])
-        self.assertEqual(10.5, blockParameterWritten.values[1][2])
-        self.assertEqual(11.5, blockParameterWritten.values[1][3])
+    # characteristicWritten = dcmWritten[name]
+    # test_element(name, attrs, values, coords, characteristicWritten)
 
-
-class TestCharacteristicLines(unittest.TestCase):
-    def test_characteristicLine(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_characteristic_lines()[0]
-        characteristicWritten = dcmWritten.get_characteristic_lines()[0]
-
-        self.assertEqual(1, len(dcm.get_characteristic_lines()))
-
-        self.assertEqual("characteristicLine", characteristic.name)
-        self.assertEqual("Sample characteristic line", characteristic.attrs["description"])
-        self.assertEqual("CharacteristicLineFunction", characteristic.attrs["function"])
-        self.assertEqual("CharacteristicLineDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.attrs["units_x"])
-        self.assertEqual(0.0, characteristic.values[0.0])
-        self.assertEqual(80.0, characteristic.values[1.0])
-        self.assertEqual(120.0, characteristic.values[2.0])
-        self.assertEqual(180.0, characteristic.values[3.0])
-        self.assertEqual(220.0, characteristic.values[4.0])
-        self.assertEqual(260.0, characteristic.values[5.0])
-        self.assertEqual(300.0, characteristic.values[6.0])
-        self.assertEqual(340.0, characteristic.values[7.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_characteristic_lines()))
-
-        self.assertEqual("characteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample characteristic line", characteristicWritten.attrs["description"])
-        self.assertEqual("CharacteristicLineFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("CharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.attrs["units_x"])
-        self.assertEqual(0.0, characteristicWritten.values[0.0])
-        self.assertEqual(80.0, characteristicWritten.values[1.0])
-        self.assertEqual(120.0, characteristicWritten.values[2.0])
-        self.assertEqual(180.0, characteristicWritten.values[3.0])
-        self.assertEqual(220.0, characteristicWritten.values[4.0])
-        self.assertEqual(260.0, characteristicWritten.values[5.0])
-        self.assertEqual(300.0, characteristicWritten.values[6.0])
-        self.assertEqual(340.0, characteristicWritten.values[7.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-    def test_fixedCharacteristicLine(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_fixed_characteristic_lines()[0]
-        characteristicWritten = dcmWritten.get_fixed_characteristic_lines()[0]
-
-        self.assertEqual(1, len(dcm.get_fixed_characteristic_lines()))
-
-        self.assertEqual("fixedCharacteristicLine", characteristic.name)
-        self.assertEqual("Sample fixed characteristic line", characteristic.attrs["description"])
-        self.assertEqual("FixedCharacteristicLineFunction", characteristic.attrs["function"])
-        self.assertEqual("FixedCharacteristicLineDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.attrs["units_x"])
-        self.assertEqual(45.0, characteristic.values[0.0])
-        self.assertEqual(90.0, characteristic.values[1.0])
-        self.assertEqual(135.0, characteristic.values[2.0])
-        self.assertEqual(180.0, characteristic.values[3.0])
-        self.assertEqual(225.0, characteristic.values[4.0])
-        self.assertEqual(270.0, characteristic.values[5.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_fixed_characteristic_lines()))
-
-        self.assertEqual("fixedCharacteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample fixed characteristic line", characteristicWritten.attrs["description"])
-        self.assertEqual("FixedCharacteristicLineFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("FixedCharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.attrs["units_x"])
-        self.assertEqual(45.0, characteristicWritten.values[0.0])
-        self.assertEqual(90.0, characteristicWritten.values[1.0])
-        self.assertEqual(135.0, characteristicWritten.values[2.0])
-        self.assertEqual(180.0, characteristicWritten.values[3.0])
-        self.assertEqual(225.0, characteristicWritten.values[4.0])
-        self.assertEqual(270.0, characteristicWritten.values[5.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-    def test_groupCharacteristicLine(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_group_characteristic_lines()[0]
-        characteristicWritten = dcmWritten.get_group_characteristic_lines()[0]
-
-        self.assertEqual(1, len(dcm.get_group_characteristic_lines()))
-
-        self.assertEqual("groupCharacteristicLine", characteristic.name)
-        self.assertEqual("Sample group characteristic line", characteristic.attrs["description"])
-        self.assertEqual("GroupCharacteristicLineFunction", characteristic.attrs["function"])
-        self.assertEqual("GroupCharacteristicLineDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("°", characteristic.unit_values)
-        self.assertEqual("s", characteristic.attrs["units_x"])
-        self.assertEqual(-45.0, characteristic.values[1.0])
-        self.assertEqual(-90.0, characteristic.values[2.0])
-        self.assertEqual(-135.0, characteristic.values[3.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_group_characteristic_lines()))
-
-        self.assertEqual("groupCharacteristicLine", characteristicWritten.name)
-        self.assertEqual("Sample group characteristic line", characteristicWritten.attrs["description"])
-        self.assertEqual("GroupCharacteristicLineFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("GroupCharacteristicLineDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("°", characteristicWritten.unit_values)
-        self.assertEqual("s", characteristicWritten.attrs["units_x"])
-        self.assertEqual(-45.0, characteristicWritten.values[1.0])
-        self.assertEqual(-90.0, characteristicWritten.values[2.0])
-        self.assertEqual(-135.0, characteristicWritten.values[3.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-
-class TestCharacteristicMaps(unittest.TestCase):
-    def test_characteristicMap(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_characteristic_maps()[0]
-        characteristicWritten = dcmWritten.get_characteristic_maps()[0]
-
-        self.assertEqual(1, len(dcm.get_characteristic_maps()))
-
-        self.assertEqual("characteristicMap", characteristic.name)
-        self.assertEqual("Sample characteristic map", characteristic.attrs["description"])
-        self.assertEqual("CharacteristicMapFunction", characteristic.attrs["function"])
-        self.assertEqual("CharacteristicMapDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.attrs["units_x"])
-        self.assertEqual("m/s", characteristic.attrs["units_y"])
-        self.assertEqual(0.0, characteristic.values[1.0][1.0])
-        self.assertEqual(0.4, characteristic.values[1.0][2.0])
-        self.assertEqual(0.8, characteristic.values[1.0][3.0])
-        self.assertEqual(1.0, characteristic.values[1.0][4.0])
-        self.assertEqual(1.4, characteristic.values[1.0][5.0])
-        self.assertEqual(1.8, characteristic.values[1.0][6.0])
-        self.assertEqual(1.0, characteristic.values[2.0][1.0])
-        self.assertEqual(2.0, characteristic.values[2.0][2.0])
-        self.assertEqual(3.0, characteristic.values[2.0][3.0])
-        self.assertEqual(2.0, characteristic.values[2.0][4.0])
-        self.assertEqual(3.0, characteristic.values[2.0][5.0])
-        self.assertEqual(4.0, characteristic.values[2.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_characteristic_maps()))
-
-        self.assertEqual("characteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample characteristic map", characteristicWritten.attrs["description"])
-        self.assertEqual("CharacteristicMapFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("CharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
-        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
-        self.assertEqual(0.0, characteristicWritten.values[1.0][1.0])
-        self.assertEqual(0.4, characteristicWritten.values[1.0][2.0])
-        self.assertEqual(0.8, characteristicWritten.values[1.0][3.0])
-        self.assertEqual(1.0, characteristicWritten.values[1.0][4.0])
-        self.assertEqual(1.4, characteristicWritten.values[1.0][5.0])
-        self.assertEqual(1.8, characteristicWritten.values[1.0][6.0])
-        self.assertEqual(1.0, characteristicWritten.values[2.0][1.0])
-        self.assertEqual(2.0, characteristicWritten.values[2.0][2.0])
-        self.assertEqual(3.0, characteristicWritten.values[2.0][3.0])
-        self.assertEqual(2.0, characteristicWritten.values[2.0][4.0])
-        self.assertEqual(3.0, characteristicWritten.values[2.0][5.0])
-        self.assertEqual(4.0, characteristicWritten.values[2.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-    def test_fixedCharacteristicMap(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_fixed_characteristic_maps()[0]
-        characteristicWritten = dcmWritten.get_fixed_characteristic_maps()[0]
-
-        self.assertEqual(1, len(dcm.get_fixed_characteristic_maps()))
-
-        self.assertEqual("fixedCharacteristicMap", characteristic.name)
-        self.assertEqual("Sample fixed characteristic map", characteristic.attrs["description"])
-        self.assertEqual("FixedCharacteristicMapFunction", characteristic.attrs["function"])
-        self.assertEqual("FixedCharacteristicMapDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.attrs["units_x"])
-        self.assertEqual("m/s", characteristic.attrs["units_y"])
-        self.assertEqual(0.0, characteristic.values[0.0][1.0])
-        self.assertEqual(0.4, characteristic.values[0.0][2.0])
-        self.assertEqual(0.8, characteristic.values[0.0][3.0])
-        self.assertEqual(1.0, characteristic.values[0.0][4.0])
-        self.assertEqual(1.4, characteristic.values[0.0][5.0])
-        self.assertEqual(1.8, characteristic.values[0.0][6.0])
-        self.assertEqual(1.0, characteristic.values[1.0][1.0])
-        self.assertEqual(2.0, characteristic.values[1.0][2.0])
-        self.assertEqual(3.0, characteristic.values[1.0][3.0])
-        self.assertEqual(2.0, characteristic.values[1.0][4.0])
-        self.assertEqual(3.0, characteristic.values[1.0][5.0])
-        self.assertEqual(4.0, characteristic.values[1.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_fixed_characteristic_maps()))
-
-        self.assertEqual("fixedCharacteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample fixed characteristic map", characteristicWritten.attrs["description"])
-        self.assertEqual("FixedCharacteristicMapFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("FixedCharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
-        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
-        self.assertEqual(0.0, characteristicWritten.values[0.0][1.0])
-        self.assertEqual(0.4, characteristicWritten.values[0.0][2.0])
-        self.assertEqual(0.8, characteristicWritten.values[0.0][3.0])
-        self.assertEqual(1.0, characteristicWritten.values[0.0][4.0])
-        self.assertEqual(1.4, characteristicWritten.values[0.0][5.0])
-        self.assertEqual(1.8, characteristicWritten.values[0.0][6.0])
-        self.assertEqual(1.0, characteristicWritten.values[1.0][1.0])
-        self.assertEqual(2.0, characteristicWritten.values[1.0][2.0])
-        self.assertEqual(3.0, characteristicWritten.values[1.0][3.0])
-        self.assertEqual(2.0, characteristicWritten.values[1.0][4.0])
-        self.assertEqual(3.0, characteristicWritten.values[1.0][5.0])
-        self.assertEqual(4.0, characteristicWritten.values[1.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-    def test_groupCharacteristicMap(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        characteristic = dcm.get_group_characteristic_maps()[0]
-        characteristicWritten = dcmWritten.get_group_characteristic_maps()[0]
-
-        self.assertEqual(1, len(dcm.get_group_characteristic_maps()))
-
-        self.assertEqual("groupCharacteristicMap", characteristic.name)
-        self.assertEqual("Sample group characteristic map", characteristic.attrs["description"])
-        self.assertEqual("GroupCharacteristicMapFunction", characteristic.attrs["function"])
-        self.assertEqual("GroupCharacteristicMapDisplayname", characteristic.attrs["display_name"])
-        self.assertEqual("bar", characteristic.unit_values)
-        self.assertEqual("°C", characteristic.attrs["units_x"])
-        self.assertEqual("m/s", characteristic.attrs["units_y"])
-        self.assertEqual(1.0, characteristic.values[1.0][1.0])
-        self.assertEqual(2.0, characteristic.values[1.0][2.0])
-        self.assertEqual(3.0, characteristic.values[1.0][3.0])
-        self.assertEqual(2.0, characteristic.values[1.0][4.0])
-        self.assertEqual(3.0, characteristic.values[1.0][5.0])
-        self.assertEqual(4.0, characteristic.values[1.0][6.0])
-        self.assertEqual(2.0, characteristic.values[2.0][1.0])
-        self.assertEqual(4.0, characteristic.values[2.0][2.0])
-        self.assertEqual(6.0, characteristic.values[2.0][3.0])
-        self.assertEqual(3.0, characteristic.values[2.0][4.0])
-        self.assertEqual(4.0, characteristic.values[2.0][5.0])
-        self.assertEqual(5.0, characteristic.values[2.0][6.0])
-        self.assertEqual(3.0, characteristic.values[3.0][1.0])
-        self.assertEqual(6.0, characteristic.values[3.0][2.0])
-        self.assertEqual(9.0, characteristic.values[3.0][3.0])
-        self.assertEqual(7.0, characteristic.values[3.0][4.0])
-        self.assertEqual(8.0, characteristic.values[3.0][5.0])
-        self.assertEqual(9.0, characteristic.values[3.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristic.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristic.y_mapping)
-        self.assertEqual("Sample comment", characteristic.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_group_characteristic_maps()))
-
-        self.assertEqual("groupCharacteristicMap", characteristicWritten.name)
-        self.assertEqual("Sample group characteristic map", characteristicWritten.attrs["description"])
-        self.assertEqual("GroupCharacteristicMapFunction", characteristicWritten.attrs["function"])
-        self.assertEqual("GroupCharacteristicMapDisplayname", characteristicWritten.attrs["display_name"])
-        self.assertEqual("bar", characteristicWritten.unit_values)
-        self.assertEqual("°C", characteristicWritten.attrs["units_x"])
-        self.assertEqual("m/s", characteristicWritten.attrs["units_y"])
-        self.assertEqual(1.0, characteristicWritten.values[1.0][1.0])
-        self.assertEqual(2.0, characteristicWritten.values[1.0][2.0])
-        self.assertEqual(3.0, characteristicWritten.values[1.0][3.0])
-        self.assertEqual(2.0, characteristicWritten.values[1.0][4.0])
-        self.assertEqual(3.0, characteristicWritten.values[1.0][5.0])
-        self.assertEqual(4.0, characteristicWritten.values[1.0][6.0])
-        self.assertEqual(2.0, characteristicWritten.values[2.0][1.0])
-        self.assertEqual(4.0, characteristicWritten.values[2.0][2.0])
-        self.assertEqual(6.0, characteristicWritten.values[2.0][3.0])
-        self.assertEqual(3.0, characteristicWritten.values[2.0][4.0])
-        self.assertEqual(4.0, characteristicWritten.values[2.0][5.0])
-        self.assertEqual(5.0, characteristicWritten.values[2.0][6.0])
-        self.assertEqual(3.0, characteristicWritten.values[3.0][1.0])
-        self.assertEqual(6.0, characteristicWritten.values[3.0][2.0])
-        self.assertEqual(9.0, characteristicWritten.values[3.0][3.0])
-        self.assertEqual(7.0, characteristicWritten.values[3.0][4.0])
-        self.assertEqual(8.0, characteristicWritten.values[3.0][5.0])
-        self.assertEqual(9.0, characteristicWritten.values[3.0][6.0])
-        self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
-        self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
-        self.assertEqual("Sample comment", characteristicWritten.attrs["comment"])
-
-
-class TestDistribution(unittest.TestCase):
-    def test_distribution(self):
-        dcm = DcmReader()
-        dcmWritten = DcmReader()
-        dcm.read("./Sample.dcm")
-        dcmWritten.read("./Sample_written.dcm")
-        distribution = dcm.get_distributions()[0]
-        distributionWritten = dcmWritten.get_distributions()[0]
-
-        self.assertEqual(1, len(dcm.get_distributions()))
-
-        self.assertEqual("distrib", distribution.name)
-        self.assertEqual("Sample distribution", distribution.attrs["description"])
-        self.assertEqual("DistributionFunction", distribution.attrs["function"])
-        self.assertEqual("DistributionDisplayname", distribution.attrs["display_name"])
-        self.assertEqual("mm", distribution.attrs["units_x"])
-        self.assertEqual(1.0, distribution.values[0])
-        self.assertEqual(2.0, distribution.values[1])
-        self.assertEqual(3.0, distribution.values[2])
-        self.assertEqual("SST", distribution.attrs["comment"])
-
-        self.assertEqual(1, len(dcmWritten.get_distributions()))
-
-        self.assertEqual("distrib", distributionWritten.name)
-        self.assertEqual("Sample distribution", distributionWritten.attrs["description"])
-        self.assertEqual("DistributionFunction", distributionWritten.attrs["function"])
-        self.assertEqual("DistributionDisplayname", distributionWritten.attrs["display_name"])
-        self.assertEqual("mm", distributionWritten.attrs["units_x"])
-        self.assertEqual(1.0, distributionWritten.values[0])
-        self.assertEqual(2.0, distributionWritten.values[1])
-        self.assertEqual(3.0, distributionWritten.values[2])
-        self.assertEqual("SST", distributionWritten.attrs["comment"])
+    # self.assertEqual(1, len(dcm.get_group_characteristic_maps()))
+    # np.testing.assert_array_equal(1, len(dcmWritten.get_group_characteristic_maps()))
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+    pytest.main()
