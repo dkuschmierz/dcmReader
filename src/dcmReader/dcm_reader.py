@@ -103,7 +103,7 @@ class DcmReader:
         except ValueError as err:
             raise ValueError(f"Cannot convert {value} from string to number.") from err
 
-    def write(self, file) -> None:
+    def write(self, file, file_encoding="utf-8") -> None:
         """Writes the current DCM object to a dcm file
 
         Args:
@@ -112,10 +112,10 @@ class DcmReader:
         if not file.endswith(".dcm"):
             file += ".dcm"
 
-        with open(file, "w", encoding="utf-8") as dcm_file:
+        with open(file, "w", encoding=file_encoding) as dcm_file:
             dcm_file.writelines(str(self))
 
-    def read(self, file) -> None:
+    def read(self, file, file_encoding="utf-8") -> None:
         """Reads and processes the given file.
 
         Args:
@@ -125,7 +125,7 @@ class DcmReader:
 
         comment_qualifier = ("!", "*", ".")
 
-        with open(file, "r", encoding="utf-8") as dcm_file:
+        with open(file, "r", encoding=file_encoding) as dcm_file:
             for line in dcm_file:
                 # Remove whitespaces
                 line = line.strip()
