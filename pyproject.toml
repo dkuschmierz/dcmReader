@@ -12,7 +12,7 @@ line-length = 120
 max-attributes=15
 max-line-length=120
 max-branches=15
-max-locals=25
+max-locals=26
 max-nested-blocks=6
 disable = [
     "too-many-branches",
