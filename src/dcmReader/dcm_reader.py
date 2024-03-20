@@ -209,9 +209,14 @@ class DcmReader:
                     found_block_parameter.y_dimension = (
                         self.convert_value(block_data.group(3)) if block_data.group(3) is not None else 1
                     )
+                    parameters = []
+                    
                     while True:
                         line = dcm_file.readline().strip()
                         if line.startswith("END"):
+                            if len(parameters) != found_block_parameter.x_dimension:
+                                logger.error("X dimension in %s do not match description!", found_block_parameter.name)
+                            found_block_parameter.values.append(parameters)
                             if len(found_block_parameter.values) != found_block_parameter.y_dimension:
                                 logger.error("Y dimension in %s do not match description!", found_block_parameter.name)
                             break
@@ -223,10 +228,7 @@ class DcmReader:
                         elif line.startswith("FUNKTION"):
                             found_block_parameter.function = self.parse_string(line)
                         elif line.startswith("WERT"):
-                            parameters = self.parse_block_parameters(line)
-                            if len(parameters) != found_block_parameter.x_dimension:
-                                logger.error("X dimension in %s do not match description!", found_block_parameter.name)
-                            found_block_parameter.values.append(parameters)
+                            parameters.extend(self.parse_block_parameters(line))
                         elif line.startswith("EINHEIT_W"):
                             found_block_parameter.unit = self.parse_string(line)
                         elif line.startswith("VAR"):
