@@ -6,7 +6,7 @@ testdir = os.path.dirname(__file__)
 srcdir = "../src"
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
 
-from dcmReader.dcm_reader import DcmReader
+from dcmReader.dcm_reader import DcmReader, DcmParameter
 
 
 class TestWriteFile(unittest.TestCase):
@@ -67,6 +67,10 @@ class TestParameters(unittest.TestCase):
         self.assertEqual("ParameterB", valueParameter.variants["VariantA"])
         self.assertEqual("ParameterA", valueParameter.text)
 
+    def test_ordering_paramter_with_only_name(self):
+        p1 = DcmParameter("p1")
+        p2 = DcmParameter("p2")
+        assert p1 < p2, 'Expecting lexicographic ordering based on parameter names'
 
 class TestParameterBlock(unittest.TestCase):
     def test_blockParameter1D(self):
