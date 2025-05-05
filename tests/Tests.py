@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 import unittest
 
 testdir = os.path.dirname(__file__)
@@ -16,6 +17,23 @@ class TestWriteFile(unittest.TestCase):
         self.assertEqual(9, len(dcm.get_functions()))
         dcm.write("./Sample_written")
 
+    def test_write_retaining_original_order(self):
+        dcm = DcmReader()
+        dcm.read("./Sample.dcm")
+        with tempfile.TemporaryDirectory(prefix="dcm_reader_test_") as tmp_dir:
+            dcm_file = os.path.join(tmp_dir, "sample_written.dcm")
+            dcm.write(dcm_file, sort_entries=False)
+
+            # Read the written file to check if the order is retained
+            dcm_written = DcmReader()
+            dcm_written.read(dcm_file)
+
+        # Check if the number of functions is the same
+        assert len(dcm.get_functions()) == len(dcm_written.get_functions())
+
+        # Check if the order of functions is retained
+        for original, written in zip(dcm.get_functions(), dcm_written.get_functions()):
+            assert original.name == written.name
 
 class TestFunctions(unittest.TestCase):
     def test_functionParsing(self):
