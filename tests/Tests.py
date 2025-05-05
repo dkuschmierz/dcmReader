@@ -6,7 +6,13 @@ testdir = os.path.dirname(__file__)
 srcdir = "../src"
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
 
-from dcmReader.dcm_reader import DcmReader, DcmParameter
+from dcmReader.dcm_reader import (
+    DcmCharacteristicLine,
+    DcmCharacteristicMap,
+    DcmReader,
+    DcmParameter,
+    DcmParameterBlock,
+)
 
 
 class TestWriteFile(unittest.TestCase):
@@ -67,10 +73,10 @@ class TestParameters(unittest.TestCase):
         self.assertEqual("ParameterB", valueParameter.variants["VariantA"])
         self.assertEqual("ParameterA", valueParameter.text)
 
-    def test_ordering_paramter_with_only_name(self):
+    def test_ordering_parameter_with_only_name(self):
         p1 = DcmParameter("p1")
         p2 = DcmParameter("p2")
-        assert p1 < p2, 'Expecting lexicographic ordering based on parameter names'
+        assert p1 < p2, 'Expecting lexicographic ordering based on names'
 
 class TestParameterBlock(unittest.TestCase):
     def test_blockParameter1D(self):
@@ -139,6 +145,10 @@ class TestParameterBlock(unittest.TestCase):
         self.assertEqual(10.5, blockParameterWritten.values[1][2])
         self.assertEqual(11.5, blockParameterWritten.values[1][3])
 
+    def test_ordering_parameter_block_with_only_name(self):
+        p1 = DcmParameterBlock("p1")
+        p2 = DcmParameterBlock("p2")
+        assert p1 < p2, 'Expecting lexicographic ordering based on names'
 
 class TestCharacteristicLines(unittest.TestCase):
     def test_characteristicLine(self):
@@ -273,6 +283,10 @@ class TestCharacteristicLines(unittest.TestCase):
         self.assertEqual("DISTRIBUTION X", characteristicWritten.x_mapping)
         self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
+    def test_ordering_characteristic_line_with_only_name(self):
+        cl1 = DcmCharacteristicLine("cl1")
+        cl2 = DcmCharacteristicLine("cl2")
+        assert cl1 < cl2, 'Expecting lexicographic ordering based on names'
 
 class TestCharacteristicMaps(unittest.TestCase):
     def test_characteristicMap(self):
@@ -469,6 +483,10 @@ class TestCharacteristicMaps(unittest.TestCase):
         self.assertEqual("DISTRIBUTION Y", characteristicWritten.y_mapping)
         self.assertEqual("Sample comment\n", characteristicWritten.comment)
 
+    def test_ordering_characteristic_line_with_only_name(self):
+        cm1 = DcmCharacteristicMap("cm1")
+        cm2 = DcmCharacteristicMap("cm2")
+        assert cm1 < cm2, 'Expecting lexicographic ordering based on names'
 
 class TestDistribution(unittest.TestCase):
     def test_distribution(self):
