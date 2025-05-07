@@ -151,7 +151,7 @@ class DcmReader:
                         continue
 
                     logging.info("Found line: %s", line)
-                    raise Exception("Incorrect file structure. DCM file format has to be first entry!")
+                    raise ImportError("Incorrect file structure. DCM file format has to be first entry!")
 
                 # Check if functions start
                 if line.startswith("FUNKTIONEN"):
@@ -703,8 +703,10 @@ class DcmReader:
     def _to_string(self, sort_entries: bool) -> str:
         output_string = ""
         # Print the file header
-        for line in self._file_header.splitlines(True):
-            output_string += f"* {line}"
+        if self._file_header != "":
+            header = self._file_header.splitlines(True)
+            header.insert(0, "")
+            output_string = "* ".join(header)
 
         # Print the file version
         output_string += "\nKONSERVIERUNG_FORMAT 2.0\n"

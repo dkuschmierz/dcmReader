@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="dcmReader",
-    version="0.4.1",
+    version="0.5.0",
     author="Dominic Kuschmierz",
     author_email="dominic@kuschmierz.org",
     description="Parser for the DCM (Data Conservation format) format used by e.g. Vector, ETAS,...",
