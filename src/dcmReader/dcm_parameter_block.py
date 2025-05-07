@@ -63,4 +63,14 @@ class DcmParameterBlock:
         return value
 
     def __lt__(self, other):
-        return self.function < other.function and self.description < other.description
+        if (
+            self.function is not None
+            and other.function is not None
+            and self.description is not None
+            and other.description is not None
+        ):
+            return (
+                self.function < other.function and self.description < other.description
+            )
+
+        return self.name < other.name
