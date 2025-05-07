@@ -103,17 +103,18 @@ class DcmReader:
         except ValueError as err:
             raise ValueError(f"Cannot convert {value} from string to number.") from err
 
-    def write(self, file, file_encoding="utf-8") -> None:
+    def write(self, file, file_encoding="utf-8", sort_entries=True) -> None:
         """Writes the current DCM object to a dcm file
 
         Args:
             file(str): DCM file to write
+            sort_entries(bool): Whether to sort the DCM entries
         """
         if not file.endswith(".dcm"):
             file += ".dcm"
 
         with open(file, "w", encoding=file_encoding) as dcm_file:
-            dcm_file.writelines(str(self))
+            dcm_file.write(self._to_string(sort_entries=sort_entries))
 
     def read(self, file, file_encoding="utf-8") -> None:
         """Reads and processes the given file.
@@ -699,7 +700,7 @@ class DcmReader:
         """Returns all found distributions as a list"""
         return self._distribution_list
 
-    def __str__(self) -> str:
+    def _to_string(self, sort_entries: bool) -> str:
         output_string = ""
         # Print the file header
         for line in self._file_header.splitlines(True):
@@ -710,7 +711,9 @@ class DcmReader:
 
         # Print the functions list
         output_string += "\nFUNKTIONEN\n"
-        for function in sorted(self._functions_list):
+        for function in (
+            sorted(self._functions_list) if sort_entries else self._functions_list
+        ):
             output_string += f"  {function}\n"
         output_string += "END\n\n"
 
@@ -725,8 +728,13 @@ class DcmReader:
         object_list.extend(self._fixed_characteristic_map_list)
         object_list.extend(self._group_characteristic_map_list)
         object_list.extend(self._distribution_list)
+        if sort_entries:
+            object_list = sorted(object_list)
 
-        for item in sorted(object_list):
+        for item in object_list:
             output_string += f"\n{item}\n"
 
         return output_string
+
+    def __str__(self) -> str:
+        return self._to_string(sort_entries=True)
