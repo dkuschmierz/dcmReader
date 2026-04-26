@@ -43,13 +43,13 @@ class DcmParameter:
             value += f"  DISPLAYNAME   {self.display_name}\n"
         if self.unit:
             value += f'  EINHEIT_W     "{self.unit}"\n'
-        if self.value:
+        if self.value is not None:
             value += f"  WERT          {self.value}\n"
         if self.text:
             value += f'  TEXT          "{self.text}"\n'
 
         for var_name, var_value in self.variants.items():
-            if self.value:
+            if self.value is not None:
                 value += f"  VAR           {var_name}={var_value}\n"
             else:
                 value += f'  VAR           {var_name}="{var_value}"\n'
