@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 testdir = os.path.dirname(__file__)
 srcdir = "../src"
@@ -97,6 +98,65 @@ class TestParameters(unittest.TestCase):
         assert p1 < p2, 'Expecting lexicographic ordering based on names'
 
 class TestParameterBlock(unittest.TestCase):
+    def test_blockParameter1D_continued_values(self):
+        with tempfile.TemporaryDirectory(prefix="dcm_reader_test_") as tmp_dir:
+            dcm_file = os.path.join(tmp_dir, "continued.dcm")
+            with open(dcm_file, "w", encoding="utf-8") as source:
+                source.write(
+                    "KONSERVIERUNG_FORMAT 2.0\n"
+                    "FESTWERTEBLOCK continued 5\n"
+                    "  WERT 1 2\n"
+                    "  WERT 3\n"
+                    "  WERT 4 5\n"
+                    "END\n"
+                )
+
+            dcm = DcmReader()
+            with patch("dcmReader.dcm_reader.logger") as logger:
+                dcm.read(dcm_file)
+                dcm.write(dcm_file)
+                written = DcmReader()
+                written.read(dcm_file)
+
+            logger.error.assert_not_called()
+            block = dcm.get_block_parameters()[0]
+            self.assertEqual(5, block.x_dimension)
+            self.assertEqual(1, block.y_dimension)
+            self.assertEqual([[1, 2], [3], [4, 5]], block.values)
+            self.assertEqual(block.values, written.get_block_parameters()[0].values)
+
+    def test_blockParameter_dimensions(self):
+        cases = [
+            ("single_line", "4", "  WERT 1 2 3 4\n", []),
+            ("explicit_single_row", "4 @ 1", "  WERT 1\n  WERT 2 3 4\n", []),
+            ("short", "4", "  WERT 1\n  WERT 2 3\n", ["X"]),
+            ("excess", "4", "  WERT 1 2 3 4\n  WERT 5\n", ["X"]),
+            ("missing", "4", "", ["X"]),
+            ("matrix", "2 @ 2", "  WERT 1 2\n  WERT 3 4\n", []),
+            ("matrix_width", "2 @ 2", "  WERT 1\n  WERT 2 3 4\n", ["X", "X"]),
+            ("matrix_rows", "2 @ 2", "  WERT 1 2\n", ["Y"]),
+        ]
+        with tempfile.TemporaryDirectory(prefix="dcm_reader_test_") as tmp_dir:
+            dcm_file = os.path.join(tmp_dir, "dimensions.dcm")
+            for name, dimensions, values, errors in cases:
+                with self.subTest(name=name):
+                    with open(dcm_file, "w", encoding="utf-8") as source:
+                        source.write(
+                            "KONSERVIERUNG_FORMAT 2.0\n"
+                            f"FESTWERTEBLOCK {name} {dimensions}\n"
+                            f"{values}END\n"
+                        )
+
+                    dcm = DcmReader()
+                    with patch("dcmReader.dcm_reader.logger") as logger:
+                        dcm.read(dcm_file)
+
+                    self.assertEqual(
+                        [(f"{axis} dimension in %s do not match description!", name) for axis in errors],
+                        [entry.args for entry in logger.error.call_args_list],
+                    )
+                    self.assertEqual(1, len(dcm.get_block_parameters()))
+
     def test_blockParameter1D(self):
         dcm = DcmReader()
         dcmWritten = DcmReader()
